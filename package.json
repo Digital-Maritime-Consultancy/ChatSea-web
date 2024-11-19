@@ -12,6 +12,7 @@
     "@types/react-dom": "^18.3.1",
     "asn1js": "^3.0.5",
     "bigint-conversion": "^2.4.3",
+    "fast-xml-parser": "^4.5.0",
     "grommet": "^2.42.0",
     "leaflet": "^1.9.4",
     "pkijs": "^3.2.4",
