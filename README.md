@@ -2,6 +2,11 @@
 
 This project is a web browser version of [ChatSea app](https://github.com/AIVeNautics/chatsea_prototype).
 
+## Install
+
+In the project directory, run:
+
+### `pnpm i`
 
 ## Available Scripts
 
