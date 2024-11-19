@@ -6,6 +6,7 @@ import Chat from './pages/Chat';
 import HeaderComponent from './components/HeaderComponent';
 import Map from './pages/Map';
 import Dashboard from './pages/Dashboard';
+import Configuration from './pages/Configuration';
 
 function App() {
   return (
@@ -18,6 +19,7 @@ function App() {
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/chat" element={<Chat />} />
         <Route path="/map" element={<Map />} />
+        <Route path="/conf" element={<Configuration />} />
       </Routes>
       </div>
     </BrowserRouter>
