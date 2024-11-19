@@ -13,9 +13,11 @@
     "asn1js": "^3.0.5",
     "bigint-conversion": "^2.4.3",
     "grommet": "^2.42.0",
+    "leaflet": "^1.9.4",
     "pkijs": "^3.2.4",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
+    "react-leaflet": "^4.2.1",
     "react-router-dom": "^6.28.0",
     "react-scripts": "5.0.1",
     "styled-components": "^6.1.13",
@@ -48,6 +50,7 @@
     ]
   },
   "devDependencies": {
+    "@types/leaflet": "^1.9.14",
     "@types/react-router-dom": "^5.3.3"
   }
 }
