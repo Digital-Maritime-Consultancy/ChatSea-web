@@ -7,10 +7,6 @@ const Chat = () => {
   const [message, setMessage] = useState("");
   const [file, setFile] = useState<File | null>(null);
 
-  const handleConnect = () => {
-    console.log("Connecting to MMS network...");
-  };
-
   return (
     <Box pad="medium">
       {/* Header */}
@@ -81,32 +77,6 @@ const Chat = () => {
         </Box>
       </Box>
       <hr />
-
-      {/* Connect to MMS Network */}
-      <Box pad={{ top: "medium" }}>
-        <Heading level={3}>Connect to MMS Network</Heading>
-        <Select
-          options={[
-            { label: "Korea Edge Router", value: "wss://kr-edgerouter.dmc.international:8888" },
-            { label: "EU Edge Router", value: "wss://eu-edgerouter.dmc.international:8888" },
-          ]}
-          placeholder="Select MMS Edge Router"
-          margin={{ bottom: "medium" }}
-        />
-        <Select
-          options={[
-            { label: "Authenticated", value: "authenticated" },
-            { label: "Unauthenticated", value: "unauthenticated" },
-          ]}
-          placeholder="Select a connection type"
-          margin={{ bottom: "medium" }}
-        />
-        <Box hidden>
-          <FileInput name="certificate" />
-          <FileInput name="privateKey" />
-        </Box>
-        <Button label="Connect" primary onClick={handleConnect} />
-      </Box>
     </Box>
   );
 };
