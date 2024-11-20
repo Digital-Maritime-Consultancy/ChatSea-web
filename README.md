@@ -2,13 +2,18 @@
 
 This project is a web browser version of [ChatSea app](https://github.com/AIVeNautics/chatsea_prototype).
 
-## Install
+## Building components
 
-In the project directory, run:
+- [React](https://react.dev/) for underlying framework
+- [Grommet](https://v2.grommet.io/components) for design system
+- [React Leaflet](https://react-leaflet.js.org/) for map view
+- [Fast XML parser](https://github.com/NaturalIntelligence/fast-xml-parser) for XML parser
+  
+## Available Scripts
+
+To install, run in the project directory:
 
 ### `pnpm i`
-
-## Available Scripts
 
 In the project directory, you can run:
 
