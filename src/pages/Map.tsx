@@ -4,6 +4,7 @@ import { MapContainer, Marker, Polygon, Polyline, Popup } from "react-leaflet";
 import { TileLayer } from "react-leaflet";
 import { useMap } from "react-leaflet";
 import { parseS124 } from "../util/s124Parser";
+import S100Data from "../models/S100data";
 
 export interface MapProp {
 }
@@ -11,6 +12,7 @@ export interface MapProp {
 interface FlyerProps {
   location: LatLngTuple;
 }
+
 const Flyer = ({ location }: FlyerProps) => {
   const map = useMap();
   useEffect(() => {
@@ -23,6 +25,12 @@ const limeOptions = { color: 'lime' }
 const purpleOptions = { color: 'purple', fillColor: 'blue' }
 
 export const Map = forwardRef(({  }: MapProp, ref) => {
+    const [data, setData] = useState<S100Data[]>([{type: 'polygon', marker: undefined, polygon: [[[51.515, -0.09],
+        [51.52, -0.1],
+        [51.52, -0.12],],
+        [[51.515, -0.09],
+        [25.52, -0.1],
+        [51.52, -0.4],]], message: 'S100 test area'} as S100Data]);
   const [location, setLocation] = useState<LatLngTuple>([48.853534, 2.348099]);
 
   useImperativeHandle(ref, () => ({
@@ -32,15 +40,6 @@ export const Map = forwardRef(({  }: MapProp, ref) => {
   const outerBounds: LatLngBoundsLiteral = [
     [50.505, -29.09],
     [52.505, 29.09],
-  ]
-
-  const multiPolygon: LatLngExpression[][] = [
-    [[51.515, -0.09],
-    [51.52, -0.1],
-    [51.52, -0.12],],
-    [[51.515, -0.09],
-    [25.52, -0.1],
-    [51.52, -0.4],],
   ]
   
   const multiPolyline: LatLngExpression[][] = [
@@ -376,13 +375,13 @@ These moorings will remain deployed for at least one year.</S124:text>
 
     `;
 
-
-
   useEffect(() => {
-    parseS124(xmlData).then((data) => {
-        console.log("Parsed S124:", data);
+    parseS124(xmlData).then((result: S100Data[]) => {
+        //setData(result);
+        setData([...data, ...result]); // Append to existing data
         });
-    }, []);
+    }, [xmlData]);
+
   return (
     <MapContainer
       id="map"
@@ -393,9 +392,25 @@ These moorings will remain deployed for at least one year.</S124:text>
       <TileLayer
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        />
-        <Polyline pathOptions={limeOptions} positions={multiPolyline} />
-        <Polygon pathOptions={purpleOptions} positions={multiPolygon} />
+        />     
+        {data.map((item, index) => {
+            console.log(item);
+            return (
+                item.type === "marker" ?
+                <Marker key={index} position={item.marker!}>
+                    <Popup>
+                        {item.message}
+                    </Popup>
+                </Marker>
+                :
+                <Polygon key={index} pathOptions={purpleOptions} positions={item.polygon!}>
+                    <Popup>
+                        {item.message}
+                    </Popup>
+                </Polygon>
+            );
+        })}
+
       <Flyer location={location}></Flyer>
       
     </MapContainer>
