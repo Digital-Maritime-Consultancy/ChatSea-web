@@ -1,9 +1,10 @@
-import { LatLngBoundsLiteral, LatLngExpression, LatLngTuple } from "leaflet";
+import { LatLngBoundsLiteral, LatLngExpression, LatLngTuple, Icon } from "leaflet";
 import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react";
 import { MapContainer, Marker, Polygon, Polyline, Popup } from "react-leaflet";
 import { TileLayer } from "react-leaflet";
 import { useMap } from "react-leaflet";
 import { parseS124 } from "../util/s124Parser";
+import { getMeanPosition } from "../util/s124Parser";
 import S100Data from "../models/S100data";
 
 export interface MapProp {
@@ -23,14 +24,25 @@ const Flyer = ({ location }: FlyerProps) => {
 
 const limeOptions = { color: 'lime' }
 const purpleOptions = { color: 'purple', fillColor: 'blue' }
+const markerIcon = new Icon({
+    iconUrl: '/NavigatoinalWarningFeaturePart.svg', 
+    iconSize: [25, 25],
+    iconAnchor: [12.5, 12.5],
+    popupAnchor: [0, -12.5]
+});
 
 export const Map = forwardRef(({  }: MapProp, ref) => {
-    const [data, setData] = useState<S100Data[]>([{type: 'polygon', marker: undefined, polygon: [[[51.515, -0.09],
-        [51.52, -0.1],
-        [51.52, -0.12],],
-        [[51.515, -0.09],
-        [25.52, -0.1],
-        [51.52, -0.4],]], message: 'S100 test area'} as S100Data]);
+    const [data, setData] = useState<S100Data[]>([{
+        type: 'polygon',
+        marker: undefined, 
+        polygon: [[[51.515, -0.09],
+                [51.52, -0.1],
+                [51.52, -0.12],],
+                [[51.515, -0.09],
+                [25.52, -0.1],
+                [51.52, -0.4],]], 
+        title: 'S100 test area', 
+        message: 'simple test area'} as S100Data]);
   const [location, setLocation] = useState<LatLngTuple>([48.853534, 2.348099]);
 
   useImperativeHandle(ref, () => ({
@@ -376,11 +388,14 @@ These moorings will remain deployed for at least one year.</S124:text>
     `;
 
   useEffect(() => {
-    parseS124(xmlData).then((result: S100Data[]) => {
-        //setData(result);
-        setData([...data, ...result]); // Append to existing data
-        });
-    }, [xmlData]);
+    parseS124(xmlData).then((result) => {
+        if (Array.isArray(result)) {
+            setData([...data, ...result]);
+        } else {
+            setData([...data, result]);
+        }
+    });
+  }, [xmlData]);
 
   return (
     <MapContainer
@@ -394,21 +409,37 @@ These moorings will remain deployed for at least one year.</S124:text>
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />     
         {data.map((item, index) => {
-            console.log(item);
-            return (
-                item.type === "marker" ?
-                <Marker key={index} position={item.marker!}>
-                    <Popup>
-                        {item.message}
-                    </Popup>
-                </Marker>
-                :
-                <Polygon key={index} pathOptions={purpleOptions} positions={item.polygon!}>
-                    <Popup>
-                        {item.message}
-                    </Popup>
-                </Polygon>
-            );
+            if (item.type === "marker") {
+                return item.marker!.map((markerPos, markerIndex) => (
+                    <Marker 
+                        icon={markerIcon} 
+                        key={`marker-${index}-${markerIndex}`} 
+                        position={markerPos}
+                    >
+                        <Popup>
+                            {item.title}
+                            <br />
+                            <br />
+                            {item.message}
+                        </Popup>
+                    </Marker>
+                ));
+            } else {
+                return item.polygon!.map((polygonPos, polygonIndex) => (
+                    <Polygon 
+                        key={`polygon-${index}-${polygonIndex}`} 
+                        pathOptions={purpleOptions} 
+                        positions={polygonPos}
+                    >
+                        <Popup>
+                            {item.title}
+                            <br />
+                            <br />
+                            {item.message}
+                        </Popup>
+                    </Polygon>
+                ));
+            }
         })}
 
       <Flyer location={location}></Flyer>
