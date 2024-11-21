@@ -3,7 +3,7 @@ import React, { createContext, Dispatch, ReactNode, SetStateAction, useContext, 
 
 interface ConnectContextType {
   mrn: string;
-  isAuthenticated: boolean;
+  connected: boolean;
   certificate: Certificate | undefined;
   privateKey: CryptoKey | undefined;
   privateKeyEcdh: CryptoKey | undefined;
@@ -22,7 +22,7 @@ const ConnectionDispatchContext = createContext<Dispatch<SetStateAction<ConnectC
 export const ConnectionContextProvider = ({ children }: Props) => {
   const [state, setState] = useState<ConnectContextType>({
     mrn: "",
-    isAuthenticated: false,
+    connected: false,
     certificate: undefined,
     privateKey: undefined,
     privateKeyEcdh: undefined,

@@ -4,19 +4,18 @@ import { v4 as uuidv4 } from "uuid";
 import { appendMagicWord, createRemoteClient, decrypt, deriveSecretKey, FlagsEnum, getMmtpSendMrnMsg, getSmmpMessage, handleSegmentedMessage, hasAnyFlag, hasFlags, isSmmp, loadCertAndPrivateKeyFromFiles, RemoteClient, SegmentedMessage, signMessage, verifySignatureOnMessage } from "./core";
 import { SmmpMessage } from "../mms/smmp";
 import { Certificate } from "pkijs";
-import { useConnectionState } from "../context/ConnectContext";
+import { useConnectionState, useConnectionStateDispatch } from "../context/ConnectContext";
 
 function MmsClient() {
     const mrnStoreUrl = "https://mrn-store.dmc.international";
     const msrSecomSearchUrl = "https://msr.maritimeconnectivity.net/api/secom/v1/searchService";
     const connectionState = useConnectionState();
+    const connectionStateDispatch = useConnectionStateDispatch();
     const [reconnectToken, setReconnectToken] = useState("");
     const [ws, setWs] = useState<WebSocket>();
     const [authenticated, setAuthenticated] = useState(false);
     const [lastSentMessage, setLastSentMessage] = useState<MmtpMessage>();
-    const [ownMrn, setOwnMrn] = useState<string>("");
     const [onSmmpSession, setOnSmmpSession] = useState<boolean>(false);
-    const [wsUrl, setWsUrl] = useState<string>("");
     let remoteClients = new Map<string, RemoteClient>();
     let segmentedMessages = new Map<string, SegmentedMessage>();
     let ongoingSmmpHandshakes = new Map<string, NodeJS.Timer>();
@@ -28,11 +27,13 @@ function MmsClient() {
 
     const [edgeRouter, setEdgeRouter] = useState<string>("");
 
+    let ownMrn: string = "";
     useEffect(() => {
-        console.log("Hello?")
-        if (wsUrl.length > 0 && connectionState.privateKeyEcdh) {
-            //connect(connectionState.privateKeyEcdh);
-            console.log("Connecting to Edge Router");
+        if (!connectionState.connected && connectionState.wsUrl.length > 0 && connectionState.privateKeyEcdh) {
+            ownMrn = connectionState.mrn!;
+            console.log(connectionState);
+            console.log(ownMrn);
+            connect(connectionState.privateKeyEcdh);
         }
     }, [connectionState]);
 
@@ -53,7 +54,7 @@ function MmsClient() {
     }
 
     const connect = async (privateKeyEcdh: CryptoKey) => {
-        let _ws = new WebSocket("ws://" + wsUrl);
+        let _ws = new WebSocket(connectionState.wsUrl);
 
         _ws.addEventListener("open", () => {
             let initialized = false;
@@ -65,8 +66,8 @@ function MmsClient() {
                 const bytes = await data.arrayBuffer();
                 const mmtpMessage = MmtpMessage.decode(new Uint8Array(bytes));
                 console.log(mmtpMessage);
-
-                if (mmtpMessage.msgType === MsgType.RESPONSE_MESSAGE && mmtpMessage.responseMessage?.responseToUuid !== lastSentMessage!.uuid) {
+                console.log(lastSentMessage);
+                if (mmtpMessage.msgType === MsgType.RESPONSE_MESSAGE && lastSentMessage && mmtpMessage.responseMessage?.responseToUuid !== lastSentMessage!.uuid) {
                     console.error("The UUID of the last sent message does not match the UUID being responded to");
                 }
                 if (!initialized) {
@@ -101,6 +102,7 @@ function MmsClient() {
                         });
                     }
                 } else {
+
                     if (mmtpMessage.msgType === MsgType.RESPONSE_MESSAGE) {
                         const msgs = mmtpMessage.responseMessage!.applicationMessages;
                         for (const msg of msgs!) {
@@ -303,6 +305,7 @@ function MmsClient() {
 
             setLastSentMessage(connectMsg);
             _ws.send(msgBlob);
+            
         });
 
         _ws.addEventListener("close", async evt => {
@@ -317,6 +320,7 @@ function MmsClient() {
             }
         });
         setWs(_ws);
+        connectionStateDispatch({...connectionState, connected: true});
     }
 
     return (

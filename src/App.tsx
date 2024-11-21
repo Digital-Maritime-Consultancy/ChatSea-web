@@ -17,6 +17,7 @@ function App() {
   return (
     <Grommet>
       <ConnectionContextProvider>
+        <MmsClient />
         <BrowserRouter>
           <div>
             <HeaderComponent />
