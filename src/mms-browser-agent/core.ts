@@ -21,6 +21,7 @@ import {fromBER, Integer, Sequence} from "asn1js";
 import {bufToBigint} from "bigint-conversion";
 import {ResponseSearchObject} from "./SecomSearch";
 import {ISmmpHeader, SmmpHeader, SmmpMessage} from "../mms/smmp";
+import { CertBundle } from "../models/certBundle";
 
 //To store the Agents/Clients own MRN loaded from the certificate
 let ownMrn = "";
@@ -173,43 +174,6 @@ export async function verifySignatureOnMessage(msg: IApplicationMessage): Promis
 }
 
 let certBytes: ArrayBuffer;
-export async function loadCertAndPrivateKeyFromFiles() {
-    if (!certFileInput.files!.length || !privateKeyFileInput.files!.length) {
-        alert("Please provide a certificate and private key file")
-    }
-
-    const certString = await certFileInput.files![0].text();
-    if (certString.startsWith("-----BEGIN")) { // Is this PEM encoded?
-        certBytes = extractFromPem(certString, "CERTIFICATE");
-    } else { // Nope, it is probably just DER encoded then
-        certBytes = await certFileInput.files![0].arrayBuffer();
-    }
-
-    const privKeyString = await privateKeyFileInput.files![0].text();
-    let privKeyBytes: ArrayBuffer;
-    if (privKeyString.startsWith("-----BEGIN")) {
-        privKeyBytes = extractFromPem(privKeyString, "PRIVATE KEY");
-    } else {
-        privKeyBytes = await privateKeyFileInput.files![0].arrayBuffer();
-    }
-
-    certificate = Certificate.fromBER(certBytes);
-    console.log("Cert is", certificate)
-    privateKey = await crypto.subtle.importKey("pkcs8", privKeyBytes, {
-        name: "ECDSA",
-        namedCurve: "P-384"
-    }, false, ["sign"]);
-    privateKeyEcdh = await crypto.subtle.importKey("pkcs8", privKeyBytes, {
-        name: "ECDH",
-        namedCurve: "P-384"
-    }, false, ["deriveKey"]);
-
-}
-
-function extractFromPem(pemInput: string, inputType: string): ArrayBuffer {
-    const b64 = pemInput.split(new RegExp(`-----BEGIN ${inputType}-----\r?\n?`))[1].split(`-----END ${inputType}-----`)[0];
-    return str2ab(atob(b64));
-}
 
 /*
 Convert a string into an ArrayBuffer
@@ -222,6 +186,49 @@ function str2ab(str: string) {
         bufView[i] = str.charCodeAt(i);
     }
     return buf;
+}
+
+function extractFromPem(pemInput: string, inputType: string): ArrayBuffer {
+    const b64 = pemInput.split(new RegExp(`-----BEGIN ${inputType}-----\r?\n?`))[1].split(`-----END ${inputType}-----`)[0];
+    return str2ab(atob(b64));
+}
+
+export async function loadCertAndPrivateKeyFromFiles(certFile: File, privKeyFile: File): Promise<CertBundle> {
+    if (!certFile || !privKeyFile) {
+        alert("Please provide a certificate and private key file");
+        throw new Error("No files provided");
+    }
+    let certificate: Certificate;
+    let certBytes: BufferSource;
+    let privateKey: CryptoKey;
+    let privateKeyEcdh: CryptoKey;
+
+    const certString = await certFile.text();
+    if (certString.startsWith("-----BEGIN")) { // Is this PEM encoded?
+        certBytes = extractFromPem(certString, "CERTIFICATE");
+    } else { // Nope, it is probably just DER encoded then
+        certBytes = await certFile.arrayBuffer();
+    }
+
+    const privKeyString = await privKeyFile.text();
+    let privKeyBytes: ArrayBuffer;
+    if (privKeyString.startsWith("-----BEGIN")) {
+        privKeyBytes = extractFromPem(privKeyString, "PRIVATE KEY");
+    } else {
+        privKeyBytes = await privKeyFile.arrayBuffer();
+    }
+
+    certificate = Certificate.fromBER(certBytes!);
+    privateKey = await crypto.subtle.importKey("pkcs8", privKeyBytes, {
+        name: "ECDSA",
+        namedCurve: "P-384"
+    }, false, ["sign"]);
+    privateKeyEcdh = await crypto.subtle.importKey("pkcs8", privKeyBytes, {
+        name: "ECDH",
+        namedCurve: "P-384"
+    }, false, ["deriveKey"]);
+
+    return {certificate, privateKey, privateKeyEcdh} as CertBundle;
 }
 
 const possibleSubscriptions: Subject[] = [
