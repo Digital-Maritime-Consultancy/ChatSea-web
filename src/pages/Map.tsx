@@ -13,7 +13,6 @@ interface FlyerProps {
   location: LatLngTuple;
 }
 
-// 상태 타입 정의
 interface RouteState {
     isPlanning: boolean;
     isSelectingDestination: boolean;
@@ -57,7 +56,7 @@ export const Map = forwardRef(({  }: MapProp, ref) => {
     isSelectingDestination: false,
     isCalculating: false
   });
-  const [snackbarMessage, setSnackbarMessage] = useState<string>('');
+  const [footerMessage, setFooterMessage] = useState<string>('');
 
   useImperativeHandle(ref, () => ({
     flyTo: (lat: number, lng: number) => setLocation([lat,lng] as LatLngTuple),
@@ -412,45 +411,45 @@ These moorings will remain deployed for at least one year.</S124:text>
   }, [xmlData]);
 
   
-  const MapEvents = ({ 
+  const MapClickEvents = ({ 
     routeState, 
     setRouteState, 
-    setSnackbarMessage 
+    setFooterMessage
   }: {
     routeState: RouteState;
     setRouteState: (state: RouteState) => void;
-    setSnackbarMessage: (message: string) => void;
+    setFooterMessage: (message: string) => void;
   }) => {
     useMapEvents({
-      click: async (e) => {
-        const clickedPoint: LatLngTuple = [e.latlng.lat, e.latlng.lng];
+      click: async (event) => {
+        const clickedPoint: LatLngTuple = [event.latlng.lat, event.latlng.lng];
   
         if (!routeState.isPlanning) {
-          if (window.confirm('이 위치에서 경로 계획을 시작하시겠습니까?')) {
+          if (window.confirm('Start Automatic Route Planning from this location?')) {
             setRouteState({
               ...routeState,
               isPlanning: true,
               isSelectingDestination: true,
               startPoint: clickedPoint
             });
-            setSnackbarMessage('목적지를 선택해주세요');
+            setFooterMessage('Choose a destination');
           }
         } else if (routeState.isSelectingDestination) {
-          if (window.confirm('이 위치를 목적지로 하시겠습니까?')) {
+          if (window.confirm('Make this location as destination?')) {
             setRouteState({
               ...routeState,
               isSelectingDestination: false,
               isCalculating: true,
               endPoint: clickedPoint
             });
-            setSnackbarMessage('경로를 계산중입니다...');
+            setFooterMessage('Calculating route...');
             
             try {
               const routeData = await requestARP(routeState.startPoint!, clickedPoint);
               // 경로 데이터 처리
-              setSnackbarMessage('경로가 계산되었습니다');
+              setFooterMessage('Route calculated');
             } catch (error) {
-              setSnackbarMessage('경로 계산 중 오류가 발생했습니다');
+              setFooterMessage('[!] Error calculating route');
             } finally {
               setRouteState({
                 ...routeState,
@@ -512,15 +511,15 @@ These moorings will remain deployed for at least one year.</S124:text>
       <Flyer location={location}></Flyer>
 
 
-      <MapEvents 
+      <MapClickEvents 
         routeState={routeState}
         setRouteState={setRouteState}
-        setSnackbarMessage={setSnackbarMessage}
+        setFooterMessage={setFooterMessage}
       />
       
-      {snackbarMessage && (
+      {footerMessage && (
         <Footer
-            background="dark-1"
+            background="brand"
             pad="small"
             style={{
             position: 'fixed',
@@ -531,7 +530,7 @@ These moorings will remain deployed for at least one year.</S124:text>
             }}
         >
         <Text textAlign="center" size="medium">
-          {snackbarMessage}
+          {footerMessage}
         </Text>
         </Footer>
       )}
