@@ -399,7 +399,7 @@ These moorings will remain deployed for at least one year.</S124:text>
 
     `;
 
-    /* Parse S124 XML data, automatically called when xmlData is updated */
+    /* Parse S124 XML data*/
     useEffect(() => {
         parseS124(xmlData).then((result) => {
             if (Array.isArray(result)) {
@@ -517,6 +517,7 @@ These moorings will remain deployed for at least one year.</S124:text>
                     url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                 />     
                 
+                {/* Draw S124 data */}
                 {data.map((item, index) => {
                     if (item.type === "marker") {
                         return item.marker!.map((markerPos, markerIndex) => (
@@ -551,6 +552,7 @@ These moorings will remain deployed for at least one year.</S124:text>
                     }
                 })}
 
+                {/* Draw temporary markers for ARP src, dst*/}
                 {tempMarkers.start && (
                     <Marker 
                         position={tempMarkers.start}
