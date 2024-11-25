@@ -7,8 +7,10 @@ interface ConnectContextType {
   certificate: Certificate | undefined;
   privateKey: CryptoKey | undefined;
   privateKeyEcdh: CryptoKey | undefined;
+  ws: WebSocket | undefined;
   wsUrl: string;
 }
+
 
 interface Props {
   children: ReactNode;
@@ -26,6 +28,7 @@ export const ConnectionContextProvider = ({ children }: Props) => {
     certificate: undefined,
     privateKey: undefined,
     privateKeyEcdh: undefined,
+    ws: undefined,
     wsUrl: "",
   });
   return (

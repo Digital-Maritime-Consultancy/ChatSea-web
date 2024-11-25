@@ -11,25 +11,28 @@ import { useState } from 'react';
 import MmsClient from './mms-browser-agent/MmsClient';
 import { Certificate } from 'pkijs';
 import { ConnectionContextProvider } from './context/ConnectContext';
+import { MsgContextProvider } from './context/MessageContext';
 
 function App() {
   
   return (
     <Grommet>
       <ConnectionContextProvider>
-        <MmsClient />
-        <BrowserRouter>
-          <div>
-            <HeaderComponent />
-            <Routes>
-              <Route path="/" element={<Landing />} />
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/chat" element={<Chat />} />
-              <Route path="/map" element={<Map />} />
-              <Route path="/conf" element={<Configuration connect={() => {}} />} />
-            </Routes>
-          </div>
-        </BrowserRouter>
+        <MsgContextProvider>
+          <MmsClient />
+          <BrowserRouter>
+            <div>
+              <HeaderComponent />
+              <Routes>
+                <Route path="/" element={<Landing />} />
+                <Route path="/dashboard" element={<Dashboard />} />
+                <Route path="/chat" element={<Chat />} />
+                <Route path="/map" element={<Map />} />
+                <Route path="/conf" element={<Configuration connect={() => {}} />} />
+              </Routes>
+            </div>
+          </BrowserRouter>
+        </MsgContextProvider>
       </ConnectionContextProvider>
     </Grommet>
   );

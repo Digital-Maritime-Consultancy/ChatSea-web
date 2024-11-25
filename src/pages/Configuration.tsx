@@ -44,8 +44,10 @@ const Configuration = ({ connect }: ConfigurationProp) => {
         privateKeyEcdh: certBundle.privateKeyEcdh,
         wsUrl: wsUrl,
         mrn: mrn,
+        ws: undefined,
       });
     });
+    console.log("Config done")
   };
 
   return (
