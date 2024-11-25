@@ -1,4 +1,4 @@
-import { useContext, useEffect, useState } from "react";
+import { createContext, ReactNode, useContext, useEffect, useRef, useState } from "react";
 import { Connect, Disconnect, Filter, MmtpMessage, MsgType, ProtocolMessage, ProtocolMessageType, Receive, Subscribe } from "../mms/mmtp";
 import { v4 as uuidv4 } from "uuid";
 import { appendMagicWord, createRemoteClient, decrypt, deriveSecretKey, FlagsEnum, getMmtpSendMrnMsg, getSmmpMessage, handleSegmentedMessage, hasAnyFlag, hasFlags, isSmmp, loadCertAndPrivateKeyFromFiles, RemoteClient, SegmentedMessage, signMessage, verifySignatureOnMessage } from "./core";
@@ -6,13 +6,18 @@ import { SmmpMessage } from "../mms/smmp";
 import { Certificate } from "pkijs";
 import { useConnectionState, useConnectionStateDispatch } from "../context/ConnectContext";
 
-function MmsClient() {
+export const WebSocketContext = createContext<React.RefObject<WebSocket> | null>(null);
+
+interface ParentComponentProps {
+    children: ReactNode; // Explicitly define that children are expected
+}
+
+const MmsClient: React.FC<ParentComponentProps> = ({ children }) =>  {
     const mrnStoreUrl = "https://mrn-store.dmc.international";
     const msrSecomSearchUrl = "https://msr.maritimeconnectivity.net/api/secom/v1/searchService";
     const connectionState = useConnectionState();
     const connectionStateDispatch = useConnectionStateDispatch();
     const [reconnectToken, setReconnectToken] = useState("");
-    const [ws, setWs] = useState<WebSocket>();
     const [authenticated, setAuthenticated] = useState(false);
     const [lastSentMessage, setLastSentMessage] = useState<MmtpMessage>();
     const [onSmmpSession, setOnSmmpSession] = useState<boolean>(false);
@@ -27,6 +32,16 @@ function MmsClient() {
 
     const [edgeRouter, setEdgeRouter] = useState<string>("");
 
+    const ws = useRef<WebSocket | null>(null);
+
+    useEffect(() => {
+        return () => {
+            if (ws.current && ws.current.readyState === ws.current.OPEN) {
+                disconnect();
+            }
+        }
+    }, []);
+    
     let ownMrn: string = "";
     useEffect(() => {
         if (!connectionState.connected && connectionState.wsUrl.length > 0 && connectionState.privateKeyEcdh) {
@@ -50,17 +65,17 @@ function MmsClient() {
         let msgBlob = MmtpMessage.encode(disconnectMsg).finish();
 
         setLastSentMessage(disconnectMsg);
-        ws!.send(msgBlob);
+        ws.current!.send(msgBlob);
     }
 
     const connect = async (privateKeyEcdh: CryptoKey) => {
-        let _ws = new WebSocket(connectionState.wsUrl);
+        ws.current = new WebSocket(connectionState.wsUrl);
 
-        _ws.addEventListener("open", () => {
+        ws.current.addEventListener("open", () => {
             let initialized = false;
             let certBytes: ArrayBuffer;
 
-            _ws.onmessage = async (msgEvent) => {
+            ws.current!.onmessage = async (msgEvent) => {
                 console.log("Message received:", msgEvent.data);
                 const data = msgEvent.data as Blob;
                 const bytes = await data.arrayBuffer();
@@ -89,7 +104,7 @@ function MmsClient() {
 
                         setLastSentMessage(subMsg);
 
-                        _ws.send(msgBlob);
+                        ws.current!.send(msgBlob);
                     }
                     initialized = true;
 
@@ -174,7 +189,7 @@ function MmsClient() {
                                             let signedSendMsg = await signMessage(mmtpMsg, false)
                                             const toBeSent = MmtpMessage.encode(signedSendMsg).finish();
                                             setLastSentMessage(signedSendMsg);
-                                            _ws.send(toBeSent);
+                                            ws.current!.send(toBeSent);
                                             clearInterval(handshakeRc);
                                             ongoingSmmpHandshakes.delete(msg.header!.sender!);
                                             setOnSmmpSession(true);
@@ -199,7 +214,7 @@ function MmsClient() {
                                         let signedSendMsg = await signMessage(mmtpMsg, false)
                                         const toBeSent = MmtpMessage.encode(signedSendMsg).finish();
                                         setLastSentMessage(signedSendMsg);
-                                        _ws.send(toBeSent);
+                                        ws.current!.send(toBeSent);
                                         //Send with ACK
                                     }
                                     // Case last part of three-way handshake, i.e. 3rd step of three-way handshake
@@ -282,7 +297,7 @@ function MmsClient() {
                         });
                         msgBlob = MmtpMessage.encode(receive).finish();
                         setLastSentMessage(receive);
-                        _ws.send(msgBlob);
+                        ws.current!.send(msgBlob);
                     }
                 }
             };
@@ -304,11 +319,11 @@ function MmsClient() {
             let msgBlob = MmtpMessage.encode(connectMsg).finish();
 
             setLastSentMessage(connectMsg);
-            _ws.send(msgBlob);
+            ws.current!.send(msgBlob);
             
         });
 
-        _ws.addEventListener("close", async evt => {
+        ws.current.addEventListener("close", async evt => {
             if (evt.code !== 1000) {
                 alert("Connection to Edge Router closed unexpectedly: " + evt.reason);
             }
@@ -319,13 +334,13 @@ function MmsClient() {
                 });
             }
         });
-        setWs(_ws);
         connectionStateDispatch({...connectionState, connected: true});
     }
 
     return (
-        <div>
-        </div>
+        <WebSocketContext.Provider value={ws}>
+            {children}
+        </WebSocketContext.Provider>
     );
 }
 

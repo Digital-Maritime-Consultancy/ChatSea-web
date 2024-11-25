@@ -17,19 +17,20 @@ function App() {
   return (
     <Grommet>
       <ConnectionContextProvider>
-        <MmsClient />
-        <BrowserRouter>
-          <div>
-            <HeaderComponent />
-            <Routes>
-              <Route path="/" element={<Landing />} />
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/chat" element={<Chat />} />
-              <Route path="/map" element={<Map />} />
-              <Route path="/conf" element={<Configuration connect={() => {}} />} />
-            </Routes>
-          </div>
-        </BrowserRouter>
+        <MmsClient>
+          <BrowserRouter>
+            <div>
+              <HeaderComponent />
+              <Routes>
+                <Route path="/" element={<Landing />} />
+                <Route path="/dashboard" element={<Dashboard />} />
+                <Route path="/chat" element={<Chat />} />
+                <Route path="/map" element={<Map />} />
+                <Route path="/conf" element={<Configuration connect={() => {}} />} />
+              </Routes>
+            </div>
+          </BrowserRouter>
+        </MmsClient>
       </ConnectionContextProvider>
     </Grommet>
   );
