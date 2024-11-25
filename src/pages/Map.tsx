@@ -1,7 +1,7 @@
 import { LatLngBoundsLiteral, LatLngExpression, LatLngTuple, Icon } from "leaflet";
 import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react";
 import { useMap, TileLayer, useMapEvents, MapContainer, Marker, Polygon, Polyline, Popup } from "react-leaflet";
-import { Footer, Text } from 'grommet';
+import { Footer, Text, Box, CheckBox } from 'grommet';
 import { parseS124, getMeanPosition } from "../util/s124Parser";
 import { requestARP } from "../util/arp";
 import S100Data from "../models/S100data";
@@ -10,7 +10,7 @@ export interface MapProp {
 }
 
 interface FlyerProps {
-  location: LatLngTuple;
+    location: LatLngTuple;
 }
 
 interface RouteState {
@@ -22,11 +22,11 @@ interface RouteState {
 }
 
 const Flyer = ({ location }: FlyerProps) => {
-  const map = useMap();
-  useEffect(() => {
-    map.flyTo(location);
-  }, [location]);
-  return <></>;
+    const map = useMap();
+    useEffect(() => {
+        map.flyTo(location);
+    }, [location]);
+    return <></>;
 };
 
 const limeOptions = { color: 'lime' }
@@ -50,37 +50,32 @@ export const Map = forwardRef(({  }: MapProp, ref) => {
                 [51.52, -0.4],]], 
         title: 'S100 test area', 
         message: 'simple test area'} as S100Data]);
-  const [location, setLocation] = useState<LatLngTuple>([48.853534, 2.348099]);
-  const [routeState, setRouteState] = useState<RouteState>({
-    isPlanning: false,
-    isSelectingDestination: false,
-    isCalculating: false
-  });
-  const [footerMessage, setFooterMessage] = useState<string>('');
+    const [location, setLocation] = useState<LatLngTuple>([48.853534, 2.348099]);
 
-  useImperativeHandle(ref, () => ({
-    flyTo: (lat: number, lng: number) => setLocation([lat,lng] as LatLngTuple),
-  }));
-  
-  const outerBounds: LatLngBoundsLiteral = [
-    [50.505, -29.09],
-    [52.505, 29.09],
-  ]
-  
-  const multiPolyline: LatLngExpression[][] = [
-    [
-      [51.5, -0.1],
-      [51.5, -0.12],
-      [51.52, -0.12],
-    ],
-    [
-      [51.5, -0.05],
-      [51.5, -0.06],
-      [51.52, -0.06],
-    ],
-  ]
+    // ARP 관련
+    const [isRoutingEnabled, setIsRoutingEnabled] = useState<boolean>(false);
+    const [routeState, setRouteState] = useState<RouteState>({
+        isPlanning: false,
+        isSelectingDestination: false,
+        isCalculating: false
+    });
+    const [footerMessage, setFooterMessage] = useState<string>('');
 
-  const xmlData = `
+    useImperativeHandle(ref, () => ({
+        flyTo: (lat: number, lng: number) => setLocation([lat,lng] as LatLngTuple),
+    }));
+  
+    const outerBounds: LatLngBoundsLiteral = [
+        [50.505, -29.09],
+        [52.505, 29.09],
+    ]
+  
+    const multiPolyline: LatLngExpression[][] = [
+        [[51.5, -0.1], [51.5, -0.12], [51.52, -0.12]],
+        [[51.5, -0.05], [51.5, -0.06], [51.52, -0.06]],
+    ]
+
+    const xmlData = `
       <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <S124:Dataset xmlns:gml="http://www.opengis.net/gml/3.2" xmlns:S124="http://www.iho.int/S124/1.0" xmlns:S100="http://www.iho.int/s100gml/5.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xlink="http://www.w3.org/1999/xlink" xsi:schemaLocation="http://www.iho.int/S124/gml/1.0 ./S100Defs/S124.xsd" gml:id="NW.CA.CCG.A.0259.24">
     <S100:DatasetIdentificationInformation>
@@ -410,133 +405,172 @@ These moorings will remain deployed for at least one year.</S124:text>
     });
   }, [xmlData]);
 
-  
-  const MapClickEvents = ({ 
-    routeState, 
-    setRouteState, 
-    setFooterMessage
-  }: {
-    routeState: RouteState;
-    setRouteState: (state: RouteState) => void;
-    setFooterMessage: (message: string) => void;
-  }) => {
-    useMapEvents({
-      click: async (event) => {
-        const clickedPoint: LatLngTuple = [event.latlng.lat, event.latlng.lng];
-  
-        if (!routeState.isPlanning) {
-          if (window.confirm('Start Automatic Route Planning from this location?')) {
-            setRouteState({
-              ...routeState,
-              isPlanning: true,
-              isSelectingDestination: true,
-              startPoint: clickedPoint
-            });
-            setFooterMessage('Choose a destination');
-          }
-        } else if (routeState.isSelectingDestination) {
-          if (window.confirm('Make this location as destination?')) {
-            setRouteState({
-              ...routeState,
-              isSelectingDestination: false,
-              isCalculating: true,
-              endPoint: clickedPoint
-            });
-            setFooterMessage('Calculating route...');
-            
-            try {
-              const routeData = await requestARP(routeState.startPoint!, clickedPoint);
-              // 경로 데이터 처리
-              setFooterMessage('Route calculated');
-            } catch (error) {
-              setFooterMessage('[!] Error calculating route');
-            } finally {
-              setRouteState({
-                ...routeState,
-                isCalculating: false
-              });
-            }
-          }
-        }
-      },
-    });
-    return null;
-  };
 
-  return (
-    <MapContainer
-      id="map"
-      style={{ height: "90vh", width: "100%" }}
-      bounds={outerBounds}
-      scrollWheelZoom={true}
-    >
-      <TileLayer
-        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        />     
-        {data.map((item, index) => {
-            if (item.type === "marker") {
-                return item.marker!.map((markerPos, markerIndex) => (
-                    <Marker 
-                        icon={markerIcon} 
-                        key={`marker-${index}-${markerIndex}`} 
-                        position={markerPos}
+    const MapClickEvents = ({ 
+        routeState, 
+        setRouteState, 
+        setFooterMessage,
+        isRoutingEnabled,
+    }: {
+        routeState: RouteState;
+        setRouteState: (state: RouteState) => void;
+        setFooterMessage: (message: string) => void;
+        isRoutingEnabled: boolean;
+    }) => {
+        useMapEvents({
+            click: async (event) => {
+                if (!isRoutingEnabled) return;
+
+                const clickedPoint: LatLngTuple = [event.latlng.lat, event.latlng.lng];
+        
+                if (!routeState.isPlanning) {
+                    if (window.confirm('Start Automatic Route Planning from this location?')) {
+                        setRouteState({
+                        ...routeState,
+                        isPlanning: true,
+                        isSelectingDestination: true,
+                        startPoint: clickedPoint
+                        });
+                        setFooterMessage('Choose a destination');
+                    }
+                } else if (routeState.isSelectingDestination) {
+                    if (window.confirm('Make this location as destination?')) {
+                        setRouteState({
+                            ...routeState,
+                            isSelectingDestination: false,
+                            isCalculating: true,
+                            endPoint: clickedPoint
+                        });
+                            setFooterMessage('Calculating route...');
+                            
+                        try {
+                            const routeData = await requestARP(routeState.startPoint!, clickedPoint);
+                            setFooterMessage('Route calculated');
+                        } catch (error) {
+                            setFooterMessage('[!] Error calculating route');
+                            setIsRoutingEnabled(false);
+                        } finally {
+                            setRouteState({
+                                ...routeState,
+                                isCalculating: false
+                            });
+                        }
+                    }
+                }
+            },
+        });
+        return null;
+    };
+
+    return (
+        <div style={{ position: 'relative' }}>
+            <Box
+                background="brand"
+                pad="small"
+                style={{
+                    position: 'absolute',
+                    top: '10px',
+                    right: '10px',
+                    zIndex: 1000
+                }}
+                onClick={(e) => {
+                    e.stopPropagation();
+                }}
+            >
+                <CheckBox
+                    checked={isRoutingEnabled}
+                    onChange={(e) => {
+                        e.stopPropagation();
+                        setIsRoutingEnabled(!isRoutingEnabled);
+                        if (!isRoutingEnabled) {
+                            setFooterMessage('Route planning is enabled. Choose a starting point.');
+                        } else {
+                            setFooterMessage('');
+                            setRouteState({
+                                isPlanning: false,
+                                isSelectingDestination: false,
+                                isCalculating: false
+                            });
+                        }
+                    }}
+                    label={isRoutingEnabled ? "Disable Route Planning" : "Enable Route Planning"}
+                />
+            </Box>
+
+            <MapContainer
+                id="map"
+                style={{ height: "90vh", width: "100%" }}
+                bounds={outerBounds}
+                scrollWheelZoom={true}
+            >
+                <TileLayer
+                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                />     
+                {data.map((item, index) => {
+                    if (item.type === "marker") {
+                        return item.marker!.map((markerPos, markerIndex) => (
+                            <Marker 
+                                icon={markerIcon} 
+                                key={`marker-${index}-${markerIndex}`} 
+                                position={markerPos}
+                            >
+                                <Popup>
+                                    {item.title}
+                                    <br />
+                                    <br />
+                                    {item.message}
+                                </Popup>
+                            </Marker>
+                        ));
+                    } else {
+                        return item.polygon!.map((polygonPos, polygonIndex) => (
+                            <Polygon 
+                                key={`polygon-${index}-${polygonIndex}`} 
+                                pathOptions={purpleOptions} 
+                                positions={polygonPos}
+                            >
+                                <Popup>
+                                    {item.title}
+                                    <br />
+                                    <br />
+                                    {item.message}
+                                </Popup>
+                            </Polygon>
+                        ));
+                    }
+                })}
+
+                <Flyer location={location}></Flyer>
+
+                <MapClickEvents 
+                    routeState={routeState}
+                    setRouteState={setRouteState}
+                    setFooterMessage={setFooterMessage}
+                    isRoutingEnabled={isRoutingEnabled}
+                />
+              
+                {footerMessage && (
+                    <Footer
+                        background="brand"
+                        pad="small"
+                        style={{
+                            position: 'fixed',
+                            bottom: 0,
+                            left: 0,
+                            right: 0,
+                            zIndex: 1000
+                        }}
                     >
-                        <Popup>
-                            {item.title}
-                            <br />
-                            <br />
-                            {item.message}
-                        </Popup>
-                    </Marker>
-                ));
-            } else {
-                return item.polygon!.map((polygonPos, polygonIndex) => (
-                    <Polygon 
-                        key={`polygon-${index}-${polygonIndex}`} 
-                        pathOptions={purpleOptions} 
-                        positions={polygonPos}
-                    >
-                        <Popup>
-                            {item.title}
-                            <br />
-                            <br />
-                            {item.message}
-                        </Popup>
-                    </Polygon>
-                ));
-            }
-        })}
-
-      <Flyer location={location}></Flyer>
-
-
-      <MapClickEvents 
-        routeState={routeState}
-        setRouteState={setRouteState}
-        setFooterMessage={setFooterMessage}
-      />
-      
-      {footerMessage && (
-        <Footer
-            background="brand"
-            pad="small"
-            style={{
-            position: 'fixed',
-            bottom: 0,
-            left: 0,
-            right: 0,
-            zIndex: 1000
-            }}
-        >
-        <Text textAlign="center" size="medium">
-          {footerMessage}
-        </Text>
-        </Footer>
-      )}
-      
-    </MapContainer>
-  );
+                        <Text textAlign="center" size="medium">
+                            {footerMessage}
+                        </Text>
+                    </Footer>
+                )}
+                
+            </MapContainer>
+        </div>
+    );
 });
 
 export default Map;
