@@ -395,17 +395,18 @@ These moorings will remain deployed for at least one year.</S124:text>
 
     `;
 
-  useEffect(() => {
-    parseS124(xmlData).then((result) => {
-        if (Array.isArray(result)) {
-            setData([...data, ...result]);
-        } else {
-            setData([...data, result]);
-        }
-    });
-  }, [xmlData]);
+    /* Parse S124 XML data, automatically called when xmlData is updated */
+    useEffect(() => {
+        parseS124(xmlData).then((result) => {
+            if (Array.isArray(result)) {
+                setData([...data, ...result]);
+            } else {
+                setData([...data, result]);
+            }
+        });
+    }, [xmlData]);
 
-
+    /* Map click event handler, automatically called when map is clicked with ARP enabled */
     const MapClickEvents = ({ 
         routeState, 
         setRouteState, 
@@ -464,6 +465,7 @@ These moorings will remain deployed for at least one year.</S124:text>
 
     return (
         <div style={{ position: 'relative' }}>
+            {/* ARP enable box */}
             <Box
                 background="brand"
                 pad="small"
@@ -473,14 +475,10 @@ These moorings will remain deployed for at least one year.</S124:text>
                     right: '10px',
                     zIndex: 1000
                 }}
-                onClick={(e) => {
-                    e.stopPropagation();
-                }}
             >
                 <CheckBox
                     checked={isRoutingEnabled}
                     onChange={(e) => {
-                        e.stopPropagation();
                         setIsRoutingEnabled(!isRoutingEnabled);
                         if (!isRoutingEnabled) {
                             setFooterMessage('Route planning is enabled. Choose a starting point.');
@@ -493,10 +491,11 @@ These moorings will remain deployed for at least one year.</S124:text>
                             });
                         }
                     }}
-                    label={isRoutingEnabled ? "Disable Route Planning" : "Enable Route Planning"}
+                    label={"Automatic Route Planning"}
                 />
             </Box>
-
+            
+            {/* leaflet map */}
             <MapContainer
                 id="map"
                 style={{ height: "90vh", width: "100%" }}
@@ -548,27 +547,27 @@ These moorings will remain deployed for at least one year.</S124:text>
                     setRouteState={setRouteState}
                     setFooterMessage={setFooterMessage}
                     isRoutingEnabled={isRoutingEnabled}
-                />
-              
-                {footerMessage && (
-                    <Footer
-                        background="brand"
-                        pad="small"
-                        style={{
-                            position: 'fixed',
-                            bottom: 0,
-                            left: 0,
-                            right: 0,
-                            zIndex: 1000
-                        }}
-                    >
-                        <Text textAlign="center" size="medium">
-                            {footerMessage}
-                        </Text>
-                    </Footer>
-                )}
-                
+                />  
             </MapContainer>
+
+            {/* Footer for message */}
+            {footerMessage && (
+                <Footer
+                    background="brand"
+                    pad="small"
+                    style={{
+                        position: 'fixed',
+                        bottom: 0,
+                        left: 0,
+                        right: 0,
+                        zIndex: 1000
+                    }}
+                >
+                    <Text textAlign="center" size="medium">
+                        {footerMessage}
+                    </Text>
+                </Footer>
+            )}
         </div>
     );
 });
