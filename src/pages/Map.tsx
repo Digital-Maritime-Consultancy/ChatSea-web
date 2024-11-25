@@ -1,10 +1,9 @@
 import { LatLngBoundsLiteral, LatLngExpression, LatLngTuple, Icon } from "leaflet";
 import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react";
-import { MapContainer, Marker, Polygon, Polyline, Popup } from "react-leaflet";
-import { TileLayer } from "react-leaflet";
-import { useMap } from "react-leaflet";
-import { parseS124 } from "../util/s124Parser";
-import { getMeanPosition } from "../util/s124Parser";
+import { useMap, TileLayer, useMapEvents, MapContainer, Marker, Polygon, Polyline, Popup } from "react-leaflet";
+import { Footer, Text } from 'grommet';
+import { parseS124, getMeanPosition } from "../util/s124Parser";
+import { requestARP } from "../util/arp";
 import S100Data from "../models/S100data";
 
 export interface MapProp {
@@ -12,6 +11,15 @@ export interface MapProp {
 
 interface FlyerProps {
   location: LatLngTuple;
+}
+
+// 상태 타입 정의
+interface RouteState {
+    isPlanning: boolean;
+    isSelectingDestination: boolean;
+    startPoint?: LatLngTuple;
+    endPoint?: LatLngTuple;
+    isCalculating: boolean;
 }
 
 const Flyer = ({ location }: FlyerProps) => {
@@ -44,6 +52,12 @@ export const Map = forwardRef(({  }: MapProp, ref) => {
         title: 'S100 test area', 
         message: 'simple test area'} as S100Data]);
   const [location, setLocation] = useState<LatLngTuple>([48.853534, 2.348099]);
+  const [routeState, setRouteState] = useState<RouteState>({
+    isPlanning: false,
+    isSelectingDestination: false,
+    isCalculating: false
+  });
+  const [snackbarMessage, setSnackbarMessage] = useState<string>('');
 
   useImperativeHandle(ref, () => ({
     flyTo: (lat: number, lng: number) => setLocation([lat,lng] as LatLngTuple),
@@ -397,6 +411,59 @@ These moorings will remain deployed for at least one year.</S124:text>
     });
   }, [xmlData]);
 
+  
+  const MapEvents = ({ 
+    routeState, 
+    setRouteState, 
+    setSnackbarMessage 
+  }: {
+    routeState: RouteState;
+    setRouteState: (state: RouteState) => void;
+    setSnackbarMessage: (message: string) => void;
+  }) => {
+    useMapEvents({
+      click: async (e) => {
+        const clickedPoint: LatLngTuple = [e.latlng.lat, e.latlng.lng];
+  
+        if (!routeState.isPlanning) {
+          if (window.confirm('이 위치에서 경로 계획을 시작하시겠습니까?')) {
+            setRouteState({
+              ...routeState,
+              isPlanning: true,
+              isSelectingDestination: true,
+              startPoint: clickedPoint
+            });
+            setSnackbarMessage('목적지를 선택해주세요');
+          }
+        } else if (routeState.isSelectingDestination) {
+          if (window.confirm('이 위치를 목적지로 하시겠습니까?')) {
+            setRouteState({
+              ...routeState,
+              isSelectingDestination: false,
+              isCalculating: true,
+              endPoint: clickedPoint
+            });
+            setSnackbarMessage('경로를 계산중입니다...');
+            
+            try {
+              const routeData = await requestARP(routeState.startPoint!, clickedPoint);
+              // 경로 데이터 처리
+              setSnackbarMessage('경로가 계산되었습니다');
+            } catch (error) {
+              setSnackbarMessage('경로 계산 중 오류가 발생했습니다');
+            } finally {
+              setRouteState({
+                ...routeState,
+                isCalculating: false
+              });
+            }
+          }
+        }
+      },
+    });
+    return null;
+  };
+
   return (
     <MapContainer
       id="map"
@@ -443,6 +510,31 @@ These moorings will remain deployed for at least one year.</S124:text>
         })}
 
       <Flyer location={location}></Flyer>
+
+
+      <MapEvents 
+        routeState={routeState}
+        setRouteState={setRouteState}
+        setSnackbarMessage={setSnackbarMessage}
+      />
+      
+      {snackbarMessage && (
+        <Footer
+            background="dark-1"
+            pad="small"
+            style={{
+            position: 'fixed',
+            bottom: 0,
+            left: 0,
+            right: 0,
+            zIndex: 1000
+            }}
+        >
+        <Text textAlign="center" size="medium">
+          {snackbarMessage}
+        </Text>
+        </Footer>
+      )}
       
     </MapContainer>
   );
