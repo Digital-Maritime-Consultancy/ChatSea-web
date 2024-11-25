@@ -7,15 +7,19 @@ interface RouteRequest {
 
 export const requestARP = async (start: LatLngTuple, end: LatLngTuple) => {
   try {
-    const response = await fetch('/api/route', {
-      method: 'POST',
+    const uri = `http://133.186.159.251:60000` + 
+      `?start_latitude=${start[0]}` +
+      `&start_longitude=${start[1]}` +
+      `&end_latitude=${end[0]}` +
+      `&end_longitude=${end[1]}`;
+
+    console.log("send request to " + uri);
+    
+    const response = await fetch(uri, {
+      method: 'GET',
       headers: {
         'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        start,
-        end
-      }),
+      }
     });
     
     if (!response.ok) {
