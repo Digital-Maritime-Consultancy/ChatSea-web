@@ -1,10 +1,5 @@
 import { LatLngTuple } from "leaflet";
 
-interface RouteRequest {
-  start: LatLngTuple;
-  end: LatLngTuple;
-}
-
 export const requestARP = async (start: LatLngTuple, end: LatLngTuple) => {
   try {
     const uri = `http://133.186.159.251:60000` + 

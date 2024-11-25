@@ -454,9 +454,11 @@ These moorings will remain deployed for at least one year.</S124:text>
                             
                         try {
                             const routeData = await requestARP(routeState.startPoint!, clickedPoint);
+                            console.log(routeData);
+                            // TODO : add Polyline to the map
                             setFooterMessage('Route calculated');
                         } catch (error) {
-                            setFooterMessage('[!] Error calculating route');
+                            setFooterMessage('[!] Error calculating route : ' + error);
                             setIsRoutingEnabled(false);
                             setTempMarkers({});
                         } finally {
