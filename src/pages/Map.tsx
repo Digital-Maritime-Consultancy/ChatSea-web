@@ -51,6 +51,10 @@ export const Map = forwardRef(({  }: MapProp, ref) => {
         title: 'S100 test area', 
         message: 'simple test area'} as S100Data]);
     const [location, setLocation] = useState<LatLngTuple>([48.853534, 2.348099]);
+    const [tempMarkers, setTempMarkers] = useState<{
+        start?: LatLngTuple;
+        end?: LatLngTuple;
+    }>({});
 
     // ARP 관련
     const [isRoutingEnabled, setIsRoutingEnabled] = useState<boolean>(false);
@@ -412,11 +416,13 @@ These moorings will remain deployed for at least one year.</S124:text>
         setRouteState, 
         setFooterMessage,
         isRoutingEnabled,
+        setTempMarkers
     }: {
         routeState: RouteState;
         setRouteState: (state: RouteState) => void;
         setFooterMessage: (message: string) => void;
         isRoutingEnabled: boolean;
+        setTempMarkers: (markers: { start?: LatLngTuple; end?: LatLngTuple; }) => void;
     }) => {
         useMapEvents({
             click: async (event) => {
@@ -427,11 +433,12 @@ These moorings will remain deployed for at least one year.</S124:text>
                 if (!routeState.isPlanning) {
                     if (window.confirm('Start Automatic Route Planning from this location?')) {
                         setRouteState({
-                        ...routeState,
-                        isPlanning: true,
-                        isSelectingDestination: true,
-                        startPoint: clickedPoint
+                            ...routeState,
+                            isPlanning: true,
+                            isSelectingDestination: true,
+                            startPoint: clickedPoint
                         });
+                        setTempMarkers({ start: clickedPoint });
                         setFooterMessage('Choose a destination');
                     }
                 } else if (routeState.isSelectingDestination) {
@@ -442,7 +449,8 @@ These moorings will remain deployed for at least one year.</S124:text>
                             isCalculating: true,
                             endPoint: clickedPoint
                         });
-                            setFooterMessage('Calculating route...');
+                        setTempMarkers({ ...tempMarkers, end: clickedPoint });
+                        setFooterMessage('Calculating route...');
                             
                         try {
                             const routeData = await requestARP(routeState.startPoint!, clickedPoint);
@@ -450,6 +458,7 @@ These moorings will remain deployed for at least one year.</S124:text>
                         } catch (error) {
                             setFooterMessage('[!] Error calculating route');
                             setIsRoutingEnabled(false);
+                            setTempMarkers({});
                         } finally {
                             setRouteState({
                                 ...routeState,
@@ -489,6 +498,7 @@ These moorings will remain deployed for at least one year.</S124:text>
                                 isSelectingDestination: false,
                                 isCalculating: false
                             });
+                            setTempMarkers({});
                         }
                     }}
                     label={"Automatic Route Planning"}
@@ -506,6 +516,7 @@ These moorings will remain deployed for at least one year.</S124:text>
                     attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                     url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                 />     
+                
                 {data.map((item, index) => {
                     if (item.type === "marker") {
                         return item.marker!.map((markerPos, markerIndex) => (
@@ -540,6 +551,21 @@ These moorings will remain deployed for at least one year.</S124:text>
                     }
                 })}
 
+                {tempMarkers.start && (
+                    <Marker 
+                        position={tempMarkers.start}
+                    >
+                        <Popup>Starting Point</Popup>
+                    </Marker>
+                )}
+                {tempMarkers.end && (
+                    <Marker 
+                        position={tempMarkers.end}
+                    >
+                        <Popup>Destination Point</Popup>
+                    </Marker>
+                )}
+
                 <Flyer location={location}></Flyer>
 
                 <MapClickEvents 
@@ -547,6 +573,7 @@ These moorings will remain deployed for at least one year.</S124:text>
                     setRouteState={setRouteState}
                     setFooterMessage={setFooterMessage}
                     isRoutingEnabled={isRoutingEnabled}
+                    setTempMarkers={setTempMarkers}
                 />  
             </MapContainer>
 
