@@ -4,11 +4,11 @@ import {useConnectionState} from "../context/ConnectContext";
 import {sendDirectMsg, sendSubjectMsg} from "../mms-browser-agent/core";
 import {useInjectDependencies} from "../mms-browser-agent/injectDependencies";
 import {useMsgState, useMsgStateDispatch} from "../context/MessageContext";
+import { getS100FileName, isS100File } from "../util/S100FileUtil";
 
 const Chat = () => {
   const [receiverType, setReceiverType] = useState("");
   const [receiverMrn, setReceiverMrn] = useState("");
-  const [mrn, setMrn] = useState("");
   const [ws, setWs] = useState<WebSocket | undefined>(undefined);
   const [message, setMessage] = useState("");
   const [file, setFile] = useState<File | null>(null);
@@ -24,7 +24,6 @@ const Chat = () => {
   useInjectDependencies();
 
   useEffect(() => {
-      setMrn(connectionState.mrn); //Updates mrn variable
       setWs(connectionState.ws)
   }, [connectionState]); //Do something whenever ConnetioNState updates
 
@@ -33,14 +32,23 @@ const Chat = () => {
       // Decode the Uint8Array into a string
       const decodedData = new TextDecoder().decode(msgState.mmtpMsgData);
 
-      // Construct the display message
-      const displayMessage = `Sender: ${msgState.senderMrn}\nMessage: ${decodedData}`;
-
-      // Prepend the new message to the receivedMessages array
-      setReceivedMessages((prevMessages) => [displayMessage, ...prevMessages]);
+      if (isS100File(decodedData)) {
+        // Construct the display message
+        const displayMessage = `Sender: ${msgState.senderMrn}\nMessage: ${getS100FileName(decodedData)}`;
+        // Prepend the new message to the receivedMessages array
+        addChatMessage(displayMessage);
+      } else {
+        // Construct the display message
+        const displayMessage = `Sender: ${msgState.senderMrn}\nMessage: ${decodedData}`;
+        // Prepend the new message to the receivedMessages array
+        addChatMessage(displayMessage);
+      }
     }
   }, [msgState]);
 
+  const addChatMessage = (message: string) => {
+    setReceivedMessages((prevMessages) => [message, ...prevMessages]);
+  }
 
   const handleSendClick = async () => {
     const encoder = new TextEncoder();
@@ -57,14 +65,17 @@ const Chat = () => {
   return (
     <Box pad="medium">
       {/* Header */}
-      <Box direction="row" justify="between" align="center">
-        <Heading level={1} margin="none">{mrn}</Heading>
-      </Box>
+      <TextArea
+        placeholder="No messages received yet"
+        readOnly // Makes the TextArea read-only
+        resize={true} // Prevents resizing
+        value={receivedMessages.length > 0 ? receivedMessages.join("\n") : ""} // Displays messages only if available
+        style={{ minHeight: "500px", minWidth: "400px" }} // Sets a larger default size
+      />
       <hr />
 
-      {/* SMMP Session Establishment */}
-
-      {connectionState.connected && (
+      {/* SMMP Session Establishment 
+        {connectionState.connected && (
         <>
           <Box direction="row" gap="large" pad={{ top: "medium" }}>
             <Box basis="1/2">
@@ -78,18 +89,17 @@ const Chat = () => {
             <Box basis="1/2">
               <Heading level={3}>Active SMMP Sessions</Heading>
               <Box hidden>
-                {/* Active SMMP Sessions will be rendered here */}
               </Box>
             </Box>
           </Box>
           <hr />
         </>
       )}
+      */}
 
       {/* Send Message - renders only if we have a connection, should be only if auth*/}
       {connectionState.connected && (
         <Box pad={{ top: "medium" }}>
-          <Heading level={3}>Send Message</Heading>
           <RadioButtonGroup
             name="receiverType"
             options={[
@@ -126,19 +136,10 @@ const Chat = () => {
           />
           <Box direction="row" gap="small" margin={{ top: "medium" }}>
             <Button label={sendBtnPlaceholder} primary onClick={handleSendClick} />
-            <Button label="Send Smmp" secondary />
+            {/* <Button label="Send Smmp" secondary /> */}
           </Box>
         </Box>
       )}
-      <hr />
-      <Heading level={3}>Received Messages</Heading>
-      <TextArea
-        placeholder="No messages received yet"
-        readOnly // Makes the TextArea read-only
-        resize={true} // Prevents resizing
-        value={receivedMessages.length > 0 ? receivedMessages.join("\n") : ""} // Displays messages only if available
-        style={{ minHeight: "200px", minWidth: "400px" }} // Sets a larger default size
-      />
     </Box>
   );
 };
