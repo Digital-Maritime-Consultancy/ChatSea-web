@@ -32,17 +32,7 @@ const markerIcon = new Icon({
 });
 
 export const Map = forwardRef(({  }: MapProp, ref) => {
-    const [data, setData] = useState<S100Data[]>([{
-        type: 'polygon',
-        marker: undefined, 
-        polygon: [[[51.515, -0.09],
-                [51.52, -0.1],
-                [51.52, -0.12],],
-                [[51.515, -0.09],
-                [25.52, -0.1],
-                [51.52, -0.4],]], 
-        title: 'S100 test area', 
-        message: 'simple test area'} as S100Data]);
+    const [data, setData] = useState<S100Data[]>([]);
   const [location, setLocation] = useState<LatLngTuple>([48.853534, 2.348099]);
 
   useImperativeHandle(ref, () => ({
