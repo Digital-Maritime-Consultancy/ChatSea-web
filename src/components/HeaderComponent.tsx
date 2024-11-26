@@ -28,7 +28,7 @@ function HeaderComponent() {
       <Button hoverIndicator ><Link to="/map">Map</Link></Button>
       <Button hoverIndicator ><Link to="/chat">Chat</Link></Button>
       <Button hoverIndicator ><Link to="/conf">Configure</Link></Button>
-      <Menu label="account" items={[{ label: 'logout' }]} />
+      <Menu label="account" items={[{ label: 'logout', onClick: () => keycloak?.logout() }]} />
     </Header>
     );
 }
