@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<S124:Dataset xmlns:gml="http://www.opengis.net/gml/3.2" xmlns:S124="http://www.iho.int/S124/1.0" xmlns:S100="http://www.iho.int/s100gml/5.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xlink="http://www.w3.org/1999/xlink" xsi:schemaLocation="http://www.iho.int/S124/gml/1.0 ./S100Defs/S124.xsd" gml:id="NW.CA.CCG.N.0613.24">
+    <S100:DatasetIdentificationInformation>
+        <S100:encodingSpecification>S-100 Part 10b</S100:encodingSpecification>
+        <S100:encodingSpecificationEdition>1.0</S100:encodingSpecificationEdition>
+        <S100:productIdentifier>S-124</S100:productIdentifier>
+        <S100:productEdition>1.0.0</S100:productEdition>
+        <S100:applicationProfile>Active NAVWARNs</S100:applicationProfile>
+        <S100:datasetFileIdentifier>124CAN_0613_24.XML</S100:datasetFileIdentifier>
+        <S100:datasetTitle>Ice Control Zone Deactivated</S100:datasetTitle>
+        <S100:datasetReferenceDate>2024-06-17</S100:datasetReferenceDate>
+        <S100:datasetLanguage>eng</S100:datasetLanguage>
+        <S100:datasetAbstract>The abstract of the dataset</S100:datasetAbstract>
+        <S100:datasetTopicCategory>oceans</S100:datasetTopicCategory>
+        <S100:datasetPurpose>base</S100:datasetPurpose>
+        <S100:updateNumber>0</S100:updateNumber>
+    </S100:DatasetIdentificationInformation>
+    <S124:members>
+        <S124:NAVWARNPreamble gml:id="NW.CA.CCG.N.0613.24.0">
+            <S124:affectedChartPublications>
+                <S124:chartAffected>
+                    <S124:chartNumber>5070</S124:chartNumber>
+                    <S124:editionDate>2024-03-20</S124:editionDate>
+                </S124:chartAffected>
+                <S124:language>eng</S124:language>
+                <S124:publicationAffected>Satosoak Island to/à Akuliakatak Peninsula</S124:publicationAffected>
+            </S124:affectedChartPublications>
+            <S124:affectedChartPublications>
+                <S124:chartAffected>
+                    <S124:chartNumber>5080</S124:chartNumber>
+                    <S124:editionDate>2021-08-12</S124:editionDate>
+                </S124:chartAffected>
+                <S124:language>eng</S124:language>
+                <S124:publicationAffected>Punchbowl and Approaches / et les approches</S124:publicationAffected>
+            </S124:affectedChartPublications>
+            <S124:affectedChartPublications>
+                <S124:chartAffected>
+                    <S124:chartNumber>5070</S124:chartNumber>
+                    <S124:editionDate>2021-08-12</S124:editionDate>
+                </S124:chartAffected>
+                <S124:language>eng</S124:language>
+                <S124:publicationAffected>Satosoak Island to / à Akuliakatak Peninsula</S124:publicationAffected>
+            </S124:affectedChartPublications>
+            <S124:generalArea>
+                <S124:locationName>
+                    <S124:language>eng</S124:language>
+                    <S124:text>Newfoundland</S124:text>
+                </S124:locationName>
+            </S124:generalArea>
+            <S124:generalArea>
+                <S124:locationName>
+                    <S124:language>eng</S124:language>
+                    <S124:text>Labrador</S124:text>
+                </S124:locationName>
+            </S124:generalArea>
+            <S124:generalArea>
+                <S124:locationName>
+                    <S124:language>eng</S124:language>
+                    <S124:text>Arctic</S124:text>
+                </S124:locationName>
+            </S124:generalArea>
+            <S124:generalArea>
+                <S124:locationName>
+                    <S124:language>eng</S124:language>
+                    <S124:text>Shipping Safety Control Zone 15</S124:text>
+                </S124:locationName>
+            </S124:generalArea>
+            <S124:messageSeriesIdentifier>
+                <S124:agencyResponsibleForProduction>Canadian Coast Guard</S124:agencyResponsibleForProduction>
+                <S124:countryName>Canada</S124:countryName>
+                <S124:nameOfSeries>N</S124:nameOfSeries>
+                <S124:warningIdentifier>urn:mrn:NW.CA.CCG.N.0613.24</S124:warningIdentifier>
+                <S124:warningNumber>613</S124:warningNumber>
+                <S124:warningType code="1">Local Navigational Warning</S124:warningType>
+                <S124:year>2024</S124:year>
+            </S124:messageSeriesIdentifier>
+            <S124:nAVWARNTitle>
+                <S124:language>eng</S124:language>
+                <S124:text>Ice Control Zone Deactivated</S124:text>
+            </S124:nAVWARNTitle>
+            <S124:intService>true</S124:intService>
+            <S124:navwarnTypeGeneral code="7">Ice Information</S124:navwarnTypeGeneral>
+            <S124:publicationTime>2024-06-17T14:53:28.38</S124:publicationTime>
+            <S124:theReferences xlink:href="#NW.CA.CCG.N.0613.24.1"/>
+            <S124:theReferences xlink:href="#NW.CA.CCG.N.0613.24.2"/>
+        </S124:NAVWARNPreamble>
+        <S124:References gml:id="NW.CA.CCG.N.0613.24.1">
+            <S124:messageSeriesIdentifier>
+                <S124:agencyResponsibleForProduction>Canadian Coast Guard</S124:agencyResponsibleForProduction>
+                <S124:countryName>Canada</S124:countryName>
+                <S124:nameOfSeries>N</S124:nameOfSeries>
+                <S124:warningIdentifier>urn:mrn:NW.CA.CCG.N.0069.24</S124:warningIdentifier>
+                <S124:warningNumber>2024</S124:warningNumber>
+                <S124:warningType code="1">Local Navigational Warning</S124:warningType>
+                <S124:year>2024</S124:year>
+            </S124:messageSeriesIdentifier>
+            <S124:noMessageOnHand>false</S124:noMessageOnHand>
+            <S124:referenceCategory code="1">Warning Cancellation</S124:referenceCategory>
+        </S124:References>
+        <S124:NAVWARNPart gml:id="NW.CA.CCG.N.0613.24.2">
+            <S124:fixedDateRange>
+                <S124:dateStart>
+                    <S100:date>2024-06-17</S100:date>
+                </S124:dateStart>
+            </S124:fixedDateRange>
+            <S124:warningInformation>
+                <S124:information>
+                    <S124:language>eng</S124:language>
+                    <S124:text>The following area has been deactivated and is no longer an ice control zone: 
+Ice Control Zone Tango.
+Mariners are advised to exercise caution as icebergs and sea ice may still be encountered.
+All laden oil tankers and ships carrying chemicals in bulk should comply with Transport Canada's TP 15163 of the Joint Industry - Government guidelines.</S124:text>
+                </S124:information>
+                <S124:navwarnTypeDetails code="147">Ice Control Zone In-Force or Deactivated</S124:navwarnTypeDetails>
+            </S124:warningInformation>
+            <S124:header xlink:href="#NW.CA.CCG.N.0613.24.0"/>
+            <S124:geometry>
+                <S100:surfaceProperty>
+                    <S100:Surface gml:id="NW.CA.CCG.N.0613.24.location.0" srsName="urn:ogc:def:crs:EPSG::4326" srsDimension="2">
+                        <gml:patches>
+                            <gml:PolygonPatch interpolation="planar">
+<gml:exterior>
+    <gml:LinearRing>
+        <gml:posList srsName="urn:ogc:def:crs:EPSG::4326" srsDimension="2" count="22">-64.296831 60.000000 -56.631874 60.000000 -56.030372 59.491541 -55.558708 58.951036 -55.313515 58.561522 -55.167946 58.168242 -54.986671 57.891937 -53.360695 57.423219 -52.245582 56.789299 -51.663307 56.237705 -51.287025 55.620709 -50.433417 54.796643 -50.070403 53.991181 -50.070483 53.990993 -50.086769 53.087923 -49.878029 52.369397 -49.358767 52.048883 -56.449183 52.048883 -57.334322 53.946904 -61.511828 55.991666 -62.289990 57.386002 -64.296831 60.000000 </gml:posList>
+    </gml:LinearRing>
+</gml:exterior>
+                            </gml:PolygonPatch>
+                        </gml:patches>
+                    </S100:Surface>
+                </S100:surfaceProperty>
+            </S124:geometry>
+        </S124:NAVWARNPart>
+    </S124:members>
+</S124:Dataset>
