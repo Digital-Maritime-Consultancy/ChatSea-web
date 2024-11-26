@@ -1,9 +1,6 @@
 import {
     ApplicationMessage,
     ApplicationMessageHeader,
-    Connect,
-    Disconnect,
-    Filter,
     IApplicationMessage,
     MmtpMessage,
     MsgType,
@@ -12,51 +9,25 @@ import {
     Receive,
     Recipients,
     Send,
-    Subscribe,
-    Unsubscribe
 } from "../mms/mmtp";
 import {v4 as uuidv4} from "uuid";
 import {Certificate} from "pkijs";
 import {fromBER, Integer, Sequence} from "asn1js";
 import {bufToBigint} from "bigint-conversion";
-import {ResponseSearchObject} from "./SecomSearch";
 import {ISmmpHeader, SmmpHeader, SmmpMessage} from "../mms/smmp";
+import { CertBundle } from "../models/certBundle";
 
-//To store the Agents/Clients own MRN loaded from the certificate
-let ownMrn = "";
+let state: { ws?: WebSocket; privateKey?: CryptoKey, ownMrn?: string } = {};
+
+export const initLegacyDependencies = (deps: typeof state) => {
+    state = deps;
+};
 
 const SMMP_SEGMENTATION_THRESHOLD = 49 * 1024 //49 KiB
-const connectContainer = document.getElementById("connectContainer") as HTMLDivElement;
-const receiveContainer = document.getElementById("receiveContainer") as HTMLDivElement;
-const urlInput = document.getElementById("edgeRouterAddr") as HTMLSelectElement;
-const connectBtn = document.getElementById("connectBtn") as HTMLButtonElement;
-
-const connTypeSelect = document.getElementById("connectionTypeSelect") as HTMLSelectElement;
-const certInputDiv = document.getElementById("certInputDiv") as HTMLDivElement;
-const certFileInput = document.getElementById("certInput") as HTMLInputElement;
-const privateKeyFileInput = document.getElementById("privateKeyInput") as HTMLInputElement;
-
-const mrnH3 = document.getElementById("mrnH3") as HTMLTextAreaElement;
-
-const msgContainer = document.getElementById("msgContainer") as HTMLDivElement;
-const sendContainer = document.getElementById("sendContainer") as HTMLDivElement;
-const msgArea = document.getElementById("msgArea") as HTMLTextAreaElement;
-const receiverMrnSelect = document.getElementById("receiverMrn") as HTMLSelectElement;
-const sendBtn = document.getElementById("sendBtn") as HTMLButtonElement;
-const sendSmmpBtn = document.getElementById("sendSmmpBtn") as HTMLButtonElement;
-const disconnectBtn = document.getElementById("disconnectBtn") as HTMLButtonElement;
 const incomingArea = document.getElementById("incomingArea") as HTMLDivElement;
 
-const subsList = document.getElementById("subscriptions") as HTMLUListElement;
-const subjectSelect = document.getElementById("subjectSelect") as HTMLSelectElement;
-
 //All SMMP relevant items
-const smmpMenu = document.getElementById("smmpMenu") as HTMLDivElement
-const smmpConnectBtn = document.getElementById("smmpConnectBtn") as HTMLButtonElement;
 const downloadReceivedBtn = document.getElementById("downloadReceived") as HTMLButtonElement;
-
-const mrnStoreUrl = "https://mrn-store.dmc.international";
-const msrSecomSearchUrl = "https://msr.maritimeconnectivity.net/api/secom/v1/searchService";
 
 const greenCheckMark = "\u2705";
 
@@ -77,25 +48,8 @@ interface Subscription {
 
 const subscriptions: Map<string, Subscription> = new Map();
 
-let authenticated: boolean;
-let connectionType: string;
-/*
-connTypeSelect.addEventListener("change", () => {
-    authenticated = connTypeSelect.value === "authenticated";
-    connectionType = connTypeSelect.value;
-    certInputDiv.hidden = !authenticated;
-});
-*/
-let certificate: Certificate;
-let privateKey: CryptoKey;
-let privateKeyEcdh : CryptoKey;
-
-let ws: WebSocket;
-let reconnectToken: string;
-let lastSentMessage: MmtpMessage;
 let remoteClients = new Map<string, RemoteClient>();
 let segmentedMessages = new Map<string, SegmentedMessage>();
-let ongoingSmmpHandshakes = new Map<string, NodeJS.Timer>();
 
 
 export async function isSmmp(msg: IApplicationMessage): Promise<boolean> {
@@ -173,43 +127,6 @@ export async function verifySignatureOnMessage(msg: IApplicationMessage): Promis
 }
 
 let certBytes: ArrayBuffer;
-export async function loadCertAndPrivateKeyFromFiles() {
-    if (!certFileInput.files!.length || !privateKeyFileInput.files!.length) {
-        alert("Please provide a certificate and private key file")
-    }
-
-    const certString = await certFileInput.files![0].text();
-    if (certString.startsWith("-----BEGIN")) { // Is this PEM encoded?
-        certBytes = extractFromPem(certString, "CERTIFICATE");
-    } else { // Nope, it is probably just DER encoded then
-        certBytes = await certFileInput.files![0].arrayBuffer();
-    }
-
-    const privKeyString = await privateKeyFileInput.files![0].text();
-    let privKeyBytes: ArrayBuffer;
-    if (privKeyString.startsWith("-----BEGIN")) {
-        privKeyBytes = extractFromPem(privKeyString, "PRIVATE KEY");
-    } else {
-        privKeyBytes = await privateKeyFileInput.files![0].arrayBuffer();
-    }
-
-    certificate = Certificate.fromBER(certBytes);
-    console.log("Cert is", certificate)
-    privateKey = await crypto.subtle.importKey("pkcs8", privKeyBytes, {
-        name: "ECDSA",
-        namedCurve: "P-384"
-    }, false, ["sign"]);
-    privateKeyEcdh = await crypto.subtle.importKey("pkcs8", privKeyBytes, {
-        name: "ECDH",
-        namedCurve: "P-384"
-    }, false, ["deriveKey"]);
-
-}
-
-function extractFromPem(pemInput: string, inputType: string): ArrayBuffer {
-    const b64 = pemInput.split(new RegExp(`-----BEGIN ${inputType}-----\r?\n?`))[1].split(`-----END ${inputType}-----`)[0];
-    return str2ab(atob(b64));
-}
 
 /*
 Convert a string into an ArrayBuffer
@@ -224,42 +141,47 @@ function str2ab(str: string) {
     return buf;
 }
 
-const possibleSubscriptions: Subject[] = [
-    {
-        value: "urn:mrn:mcp:service:dk-dmi:weather_on_route",
-        name: "Weather on route",
-    },
-    {
-        value: "Boats",
-        name: "Boats",
-    },
-    {
-        value: "MCP",
-        name: "MCP",
-    },
-    {
-        value: "Weather",
-        name: "Weather",
-    },
-    {
-        value: "NW-AU",
-        name: "NW from Australia"
-    },
-    {
-        value: "s-124",
-        name: "S124",
-    },
-    {
-        value: "s-125",
-        name: "S125",
+function extractFromPem(pemInput: string, inputType: string): ArrayBuffer {
+    const b64 = pemInput.split(new RegExp(`-----BEGIN ${inputType}-----\r?\n?`))[1].split(`-----END ${inputType}-----`)[0];
+    return str2ab(atob(b64));
+}
+
+export async function loadCertAndPrivateKeyFromFiles(certFile: File, privKeyFile: File): Promise<CertBundle> {
+    if (!certFile || !privKeyFile) {
+        alert("Please provide a certificate and private key file");
+        throw new Error("No files provided");
     }
-];
+    let certificate: Certificate;
+    let certBytes: BufferSource;
+    let privateKey: CryptoKey;
+    let privateKeyEcdh: CryptoKey;
 
-let encodedFile: Uint8Array | undefined;
+    const certString = await certFile.text();
+    if (certString.startsWith("-----BEGIN")) { // Is this PEM encoded?
+        certBytes = extractFromPem(certString, "CERTIFICATE");
+    } else { // Nope, it is probably just DER encoded then
+        certBytes = await certFile.arrayBuffer();
+    }
 
-interface Agent {
-    mrn: string,
-    edgeRouter: string,
+    const privKeyString = await privKeyFile.text();
+    let privKeyBytes: ArrayBuffer;
+    if (privKeyString.startsWith("-----BEGIN")) {
+        privKeyBytes = extractFromPem(privKeyString, "PRIVATE KEY");
+    } else {
+        privKeyBytes = await privKeyFile.arrayBuffer();
+    }
+
+    certificate = Certificate.fromBER(certBytes!);
+    privateKey = await crypto.subtle.importKey("pkcs8", privKeyBytes, {
+        name: "ECDSA",
+        namedCurve: "P-384"
+    }, false, ["sign"]);
+    privateKeyEcdh = await crypto.subtle.importKey("pkcs8", privKeyBytes, {
+        name: "ECDH",
+        namedCurve: "P-384"
+    }, false, ["deriveKey"]);
+
+    return {certificate, privateKey, privateKeyEcdh} as CertBundle;
 }
 
 export interface RemoteClient {
@@ -276,277 +198,11 @@ export interface SegmentedMessage {
     totalBlocks : number
 }
 
-const mrnRadio = document.getElementById('mrn') as HTMLInputElement;
-const subjectRadio = document.getElementById('subject') as HTMLInputElement;
-/*
-mrnRadio.addEventListener('change', () => {
-    if (mrnRadio.checked) {
-        subjectSelect.hidden = true;
-        receiverMrnSelect.hidden = false;
-        fetch(mrnStoreUrl + "/mrns", {
-            mode: "cors",
-            method: "GET"
-        })
-            .then(resp => resp.json())
-            .then((resp: Agent[]) => resp.forEach(agent => {
-                console.log("Resp has length", resp.length)
-                if (agent.mrn !== ownMrn && !mrnOptionExists(agent.mrn, receiverMrnSelect)) {
-                    const mrnOption = document.createElement("option");
-                    mrnOption.value = agent.mrn;
-                    mrnOption.textContent = agent.mrn;
-                    receiverMrnSelect.add(mrnOption);
-                }
-                console.log("Select is is: ", receiverMrnSelect)
-                console.log("Select has options", receiverMrnSelect.options)
-                remoteClients.forEach((rc, mrn) => {
 
-                    //Check against existing from DOM model
-                    console.log("Checking if elem already exists", mrn)
-                    console.log("Compare with num options", receiverMrnSelect.options.length)
-                    if (!mrnOptionExists(mrn, receiverMrnSelect)) {
-                        console.log("Did not already exists")
-                        const mrnOption = document.createElement("option");
-                        mrnOption.value = mrn;
-                        mrnOption.textContent = mrn;
-                        receiverMrnSelect.add(mrnOption);
-                    }
-                })
-            }));
-        //Also add active SMMP Clients to the list - but only if not already there
-
-
-    }
-});
-*/
-function mrnOptionExists(mrn : string, selectElem : HTMLSelectElement) {
-    for (const option of Array.from(selectElem.options)) {
-        console.log("Compare to ", option.value)
-        if (option.value === mrn) {
-            console.log("RETURN TRUE")
-            return true
-        }
-    }
-    return false
-}
-
-
-/*
-subjectRadio.addEventListener('change', () => {
-    if (subjectRadio.checked) {
-        receiverMrnSelect.hidden = true;
-        receiverMrnSelect.innerHTML = "<option value=\"\">---Please select an MRN---</option>";
-        subjectSelect.hidden = false;
-        sendBtn.style.width = "100vw";
-        sendSmmpBtn.hidden = true;
-        sendBtn.textContent = "Send"
-    }
-});
-
-let nwSubjectName: string;
-
-possibleSubscriptions.forEach(ps => {
-    const li = document.createElement("li");
-    li.classList.add("list-group-item");
-
-    const span = document.createElement("span");
-    span.textContent = ps.name;
-    span.classList.add("pe-2");
-    li.appendChild(span);
-
-    const subButton = document.createElement("button");
-    subButton.classList.add("btn", "btn-primary");
-    subButton.textContent = "Subscribe";
-    li.appendChild(subButton);
-
-    const unsubButton = document.createElement("button");
-    unsubButton.classList.add("btn", "btn-danger");
-    unsubButton.textContent = "Unsubscribe";
-    unsubButton.hidden = true;
-    li.appendChild(unsubButton);
-
-    subButton.addEventListener("click", async () => {
-        let subject = ps.value;
-        if (ps.value === "NW-AU") {
-            const auWkt = "POLYGON ((-257.167969 -26.902477, -242.753906 -14.774883, -227.285156 -7.885147, -206.71875 -12.21118, -203.027344 -36.597889, -213.222656 -47.872144, -250.488281 -39.504041, -257.167969 -26.902477))";
-            const body = {
-                query: {
-                    dataProductType: "S124"
-                },
-                geometry: auWkt
-            };
-            const response = await fetch(msrSecomSearchUrl, {
-                method: "POST",
-                body: JSON.stringify(body),
-                headers: {
-                    "Content-Type": "application/json"
-                }
-            });
-            const responseSearchObject: ResponseSearchObject = await response.json();
-            for (const sr of responseSearchObject.searchServiceResult) {
-                if (sr.endpointUri.startsWith("urn:mrn")) { // this is an MMS subject
-                    subject = sr.endpointUri;
-                    nwSubjectName = subject;
-                    const certs: Certificate[] = sr.certificates?.map(c => {
-                        const pem = c.certificate;
-                        const der = extractFromPem(pem, "CERTIFICATE");
-                        return Certificate.fromBER(der);
-                    }, []);
-                    const serviceProvider: ServiceProvider = {
-                        mrn: sr.instanceId,
-                        certificates: certs
-                    };
-                    let subscription = subscriptions.get(subject);
-                    if (!subscription) {
-                        subscription = {
-                            subject: subject,
-                            serviceProviders: []
-                        };
-                    }
-                    subscription.serviceProviders.push(serviceProvider);
-                    subscriptions.set(subject, subscription);
-                    // right now we just handle the first result we find
-                    break;
-                }
-            }
-        }
-        const subMsg = MmtpMessage.create({
-            uuid: uuidv4(),
-            msgType: MsgType.PROTOCOL_MESSAGE,
-            protocolMessage: ProtocolMessage.create({
-                protocolMsgType: ProtocolMessageType.SUBSCRIBE_MESSAGE,
-                subscribeMessage: Subscribe.create({
-                    subject: subject
-                })
-            })
-        });
-        const subMsgBytes = MmtpMessage.encode(subMsg).finish();
-        lastSentMessage = subMsg;
-        ws.send(subMsgBytes);
-
-        subButton.hidden = true;
-        unsubButton.hidden = false;
-    });
-
-    unsubButton.addEventListener("click", () => {
-        let subject = ps.value;
-        if (subject === "NW-AU") {
-            subject = nwSubjectName;
-        }
-        const unsubMsg = MmtpMessage.create({
-            uuid: uuidv4(),
-            msgType: MsgType.PROTOCOL_MESSAGE,
-            protocolMessage: ProtocolMessage.create({
-                protocolMsgType: ProtocolMessageType.UNSUBSCRIBE_MESSAGE,
-                unsubscribeMessage: Unsubscribe.create({
-                    subject: subject
-                })
-            })
-        });
-        const unsubMsgBytes = MmtpMessage.encode(unsubMsg).finish();
-        lastSentMessage = unsubMsg;
-        ws.send(unsubMsgBytes);
-
-        unsubButton.hidden = true;
-        subButton.hidden = false;
-    });
-
-    subsList.appendChild(li);
-
-    const subjectOption = document.createElement("option");
-    subjectOption.value = ps.value;
-    subjectOption.textContent = ps.name;
-    subjectSelect.appendChild(subjectOption);
-});
-*/
 interface SignatureVerificationResponse {
     valid: boolean,
     signer?: string,
     serialNumber?: bigint
-}
-
-
-
-const fileBytesArray = new TextEncoder().encode("FILE"); // The bytes of the word "FILE"
-
-function showReceivedMessage(msg: IApplicationMessage, signatureVerificationResponse: SignatureVerificationResponse) {
-    const payload = msg.body;
-    const decoder = new TextDecoder();
-    const lineBreak = document.createElement('br');
-    console.log(payload!.subarray(0, 4))
-
-    if (arraysEqual(payload!.subarray(0, 4), fileBytesArray)) {
-        for (let i = 4; i < payload!.length; i++) {
-            if (arraysEqual(payload!.subarray(i, i + 4), fileBytesArray)) {
-                const fileNameBytes = payload!.subarray(4, i);
-                const fileName = decoder.decode(fileNameBytes);
-                const content = payload!.subarray(i + 4);
-                let newStr = ""
-
-                const downloadLink = document.createElement("a");
-                downloadLink.href = "#";
-                downloadLink.textContent = fileName;
-                downloadLink.onclick = (e) => {
-                    let hidden_a = document.createElement('a');
-                    hidden_a.setAttribute('href', 'data:application/octet-stream;base64,' + bytesToBase64(content));
-                    hidden_a.setAttribute('download', fileName);
-                    document.body.appendChild(hidden_a);
-                    hidden_a.click();
-
-                    e.preventDefault();
-                };
-                if (incomingArea.textContent !== '') {
-                    incomingArea.prepend(lineBreak);
-                }
-                const textSpan = document.createElement("span");
-                textSpan.setAttribute("data-toggle", "tooltip");
-                textSpan.textContent = `${msg.header!.sender!} sent: `;
-                const date = Date()
-                textSpan.title = `${date}`
-                incomingArea.prepend(textSpan)
-                textSpan.append(downloadLink);
-                downloadReceivedBtn.onclick = () => {
-                    downloadLink.click();
-                }
-                downloadReceivedBtn.hidden = false
-                break;
-            }
-        }
-    } else {
-        downloadReceivedBtn.hidden = true
-        const text = decoder.decode(payload!);
-        const textSpan = document.createElement("span");
-        textSpan.setAttribute("data-toggle", "tooltip");
-        textSpan.textContent = `${msg.header!.sender!} sent: ${text}`;
-        const date = Date()
-        textSpan.title = `${date}`
-        if (incomingArea.textContent !== '') {
-            incomingArea.prepend(lineBreak);
-        }
-        incomingArea.prepend(textSpan)
-    }
-    if (signatureVerificationResponse.valid) {
-        const signatureStatusSpan = document.createElement("span");
-        signatureStatusSpan.style.marginLeft = "4px";
-        signatureStatusSpan.setAttribute("data-toggle", "tooltip");
-        signatureStatusSpan.setAttribute("data-placement", "right");
-        signatureStatusSpan.textContent = greenCheckMark;
-        signatureStatusSpan.title = `The signature was successfully verified using certificate for ${signatureVerificationResponse.signer} with serial number ${signatureVerificationResponse.serialNumber!.toString()}`;
-
-        if (incomingArea.textContent !== '') {
-            incomingArea.prepend(lineBreak);
-        }
-        incomingArea.prepend(signatureStatusSpan);
-    }
-}
-
-function arraysEqual(a: Uint8Array, b: Uint8Array): boolean {
-    if (a.length !== b.length)
-        return false;
-    for (let i = 0; i < a.length; i++) {
-        if (a[i] !== b[i])
-            return false;
-    }
-    return true;
 }
 
 function bytesToBase64(bytes: Uint8Array): string {
@@ -554,44 +210,7 @@ function bytesToBase64(bytes: Uint8Array): string {
     return btoa(binString);
 }
 
-/*
-sendBtn.addEventListener("click", async () => {
-    if (!mrnRadio.checked && !subjectRadio.checked) {
-        alert("You need to choose message type!");
-    }
-    let body: Uint8Array;
-    if (encodedFile) {
-        body = encodedFile;
-    } else {
-        const text = msgArea.value;
-        const encoder = new TextEncoder();
-        body = encoder.encode(text);
-    }
-    await sendMsg(body)
-    const oldText = sendBtn.textContent
-    setTimeout(() => {
-        sendBtn.textContent = 'Sent';
-        sendBtn.classList.remove('btn-primary');
-        sendBtn.classList.add('btn-success');
-        sendBtn.disabled = true;
-
-        // Reset button after 3 seconds
-        setTimeout(() => {
-            sendBtn.textContent = oldText;
-            sendBtn.classList.remove('btn-success');
-            sendBtn.classList.add('btn-primary');
-            sendBtn.disabled = false;
-        }, 3000);
-    }, 500);
-    console.log("MSG SENT!")
-    msgArea.value = "";
-    encodedFile = undefined;
-    loadedState.style.display = 'none';
-    unloadedState.style.display = 'block';
-});
-*/
-async function sendMsg(body : Uint8Array) {
-
+export async function sendSubjectMsg(subj : string, body : Uint8Array) {
     // set expiration to be one hour from now
     const expires = new Date();
     expires.setTime(expires.getTime() + 3_600_000);
@@ -605,35 +224,88 @@ async function sendMsg(body : Uint8Array) {
                 applicationMessage: ApplicationMessage.create({
                     header: ApplicationMessageHeader.create({
                         expires: Math.floor(expires.getTime() / 1000),
-                        sender: ownMrn,
+                        sender: state.ownMrn,
                         bodySizeNumBytes: body.length,
+                        subject: subj,
                     }),
                     body: body,
                 })
             })
         })
     });
-    let subjectCastMsg : boolean = false
 
-    if (mrnRadio.checked) {
-        const receiver = receiverMrnSelect.options[receiverMrnSelect.selectedIndex].value;
-        sendMsg.protocolMessage!.sendMessage!.applicationMessage!.header!.recipients = Recipients.create({
-            recipients: [receiver]
-        });
-
-    } else if (subjectRadio.checked) {
-        sendMsg.protocolMessage!.sendMessage!.applicationMessage!.header!.subject = subjectSelect.options[subjectSelect.selectedIndex].value;
-        subjectCastMsg = true
+    if (state.privateKey) {
+        let signedSendMsg = await signMessage(sendMsg, true, state.privateKey)
+        const toBeSent = MmtpMessage.encode(signedSendMsg).finish();
+        if (state.ws) {
+            state.ws.send(toBeSent);
+        } else {
+            console.log("Could not send message - No websocket")
+        }
+    } else {
+        console.log("Could not send message - No signature key")
     }
 
-    let signedSendMsg = await signMessage(sendMsg, subjectCastMsg)
-
-    const toBeSent = MmtpMessage.encode(signedSendMsg).finish();
-    console.log("Sent MMTP message: ", signedSendMsg);
-    lastSentMessage = signedSendMsg;
-    ws.send(toBeSent);
-
 }
+
+export async function sendDirectMsg(subj : string, body : Uint8Array, receiver : string) {
+    // set expiration to be one hour from now
+    const expires = new Date();
+    expires.setTime(expires.getTime() + 3_600_000);
+
+    const sendMsg = MmtpMessage.create({
+        msgType: MsgType.PROTOCOL_MESSAGE,
+        uuid: uuidv4(),
+        protocolMessage: ProtocolMessage.create({
+            protocolMsgType: ProtocolMessageType.SEND_MESSAGE,
+            sendMessage: Send.create({
+                applicationMessage: ApplicationMessage.create({
+                    header: ApplicationMessageHeader.create({
+                        expires: Math.floor(expires.getTime() / 1000),
+                        sender: state.ownMrn,
+                        bodySizeNumBytes: body.length,
+                        recipients: {
+                            recipients: [receiver]
+                        },
+                    }),
+                    body: body,
+                })
+            })
+        })
+    });
+
+    if (state.privateKey) {
+        let signedSendMsg = await signMessage(sendMsg, false, state.privateKey)
+        const toBeSent = MmtpMessage.encode(signedSendMsg).finish();
+        if (state.ws) {
+            state.ws.send(toBeSent);
+        } else {
+            console.log("Could not send message - No websocket")
+        }
+    } else {
+        console.log("Could not send message - No signature key")
+    }
+}
+
+
+async function sendMsgReceive() {
+    const receive = MmtpMessage.create({
+        msgType: MsgType.PROTOCOL_MESSAGE,
+        uuid: uuidv4(),
+        protocolMessage: ProtocolMessage.create({
+            protocolMsgType: ProtocolMessageType.RECEIVE_MESSAGE,
+            receiveMessage: Receive.create({})
+        })
+    });
+    const toBeSent = MmtpMessage.encode(receive).finish();
+    console.log("Sent MMTP message: ", toBeSent);
+    if (state.ws) {
+        state.ws.send(toBeSent);
+    } else {
+        console.log("Could not send message - No websocket")
+    }
+}
+
 /*
 sendSmmpBtn.addEventListener("click", async () => {
     const receiverMrn = receiverMrnSelect.options[receiverMrnSelect.selectedIndex].value;
@@ -867,7 +539,7 @@ export function getMmtpSendMrnMsg(recipientMrn : string, body : Uint8Array) {
                 applicationMessage: ApplicationMessage.create({
                     header: ApplicationMessageHeader.create({
                         expires: Math.floor(expires.getTime() / 1000),
-                        sender: ownMrn,
+                        sender: state.ownMrn,
                         bodySizeNumBytes: body.length,
                     }),
                     body: body,
@@ -909,7 +581,7 @@ function getSmmpHandshakeMessage() {
 }
 
 
-export async function signMessage(msg : MmtpMessage, subject : boolean) {
+export async function signMessage(msg : MmtpMessage, subject : boolean, signKey : CryptoKey) {
     const appMsgHeader = msg.protocolMessage!.sendMessage!.applicationMessage!.header!
     const appMsg = msg.protocolMessage!.sendMessage!.applicationMessage!
 
@@ -923,7 +595,7 @@ export async function signMessage(msg : MmtpMessage, subject : boolean) {
     }
 
     uint8Arrays.push(encoder.encode(appMsgHeader.expires.toString()));
-    uint8Arrays.push(encoder.encode(ownMrn));
+    uint8Arrays.push(encoder.encode(state.ownMrn));
     uint8Arrays.push(encoder.encode(appMsg.body!.length.toString()));
     uint8Arrays.push(appMsg.body!);
 
@@ -939,7 +611,7 @@ export async function signMessage(msg : MmtpMessage, subject : boolean) {
     const signature = new Uint8Array(await crypto.subtle.sign({
         name: "ECDSA",
         hash: "SHA-384"
-    }, privateKey, bytesToBeSigned));
+    }, signKey, bytesToBeSigned));
 
     const r = signature.slice(0, signature.length / 2);
     const s = signature.slice(signature.length / 2, signature.length);
@@ -971,14 +643,6 @@ const createSegmentedMessage = (rb : number, tb : number, maxBlockSize : number)
     };
 };
 
-/*
-const loadedState = document.getElementById('file-state-loaded')!;
-const unloadedState = document.getElementById('file-state-unloaded')!;
-
-loadedState.style.display = 'none';
-unloadedState.style.display = 'block';
-*/
-//Derives a shared AES-CTR 256-bit key for session confidentiality
 export async function deriveSecretKey(privateKey : CryptoKey, publicKey : CryptoKey) {
     const privateKeyAlgorithm = privateKey.algorithm;
     const publicKeyAlgorithm = publicKey.algorithm;
