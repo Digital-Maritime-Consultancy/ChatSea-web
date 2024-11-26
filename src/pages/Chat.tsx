@@ -32,17 +32,15 @@ const Chat = () => {
       // Decode the Uint8Array into a string
       const decodedData = new TextDecoder().decode(msgState.mmtpMsgData);
 
+      // Construct the display message
+      let displayMessage = "";
       if (isS100File(decodedData)) {
-        // Construct the display message
-        const displayMessage = `Sender: ${msgState.senderMrn}\nMessage: ${getS100FileName(decodedData)}`;
-        // Prepend the new message to the receivedMessages array
-        addChatMessage(displayMessage);
+        displayMessage = `Sender: ${msgState.senderMrn}\nMessage: ${getS100FileName(decodedData)}`;
       } else {
-        // Construct the display message
-        const displayMessage = `Sender: ${msgState.senderMrn}\nMessage: ${decodedData}`;
-        // Prepend the new message to the receivedMessages array
-        addChatMessage(displayMessage);
+        displayMessage = `Sender: ${msgState.senderMrn}\nMessage: ${decodedData}`;
       }
+      // Prepend the new message to the receivedMessages array
+      addChatMessage(displayMessage);
     }
   }, [msgState]);
 
