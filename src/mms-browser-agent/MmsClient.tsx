@@ -32,13 +32,9 @@ function MmsClient() {
 
     let ownMrn: string = "";
     useEffect(() => {
-        console.log("mrn is now", connectionState.mrn)
-        if (!connectionState.connected && connectionState.wsUrl.length > 0 && connectionState.privateKeyEcdh) {
+        if (!connectionState.connected && connectionState.wsUrl.length > 0 && connectionState.privateKeyEcdh && !connectionState.ws) {
             ownMrn = connectionState.mrn!;
-            console.log(connectionState);
-            console.log(ownMrn);
             connect(connectionState.privateKeyEcdh);
-            console.log("Updated connectionState.ws:", connectionState.ws);
         }
     }, [connectionState]);
 
@@ -59,9 +55,18 @@ function MmsClient() {
     }
 
     const connect = async (privateKeyEcdh: CryptoKey) => {
-        console.log("Call connect")
-        console.log(connectionState.ws)
-        let _ws = new WebSocket(connectionState.wsUrl);
+        let _ws: WebSocket;
+        
+        _ws = await new WebSocket(connectionState.wsUrl);
+        _ws.onerror = function (event) {
+            console.error("Failed to create WebSocket connection:", event);
+        }
+        _ws.onopen = function (event) {
+            console.log("WebSocket connection established");
+            setWs(_ws);
+            setConnectionState({...connectionState, connected: true,
+                ws: _ws,});
+        }
 
 
 
@@ -341,9 +346,7 @@ function MmsClient() {
                 });
             }
         });
-        setWs(_ws);
-        setConnectionState({...connectionState, connected: true,
-            ws: _ws,});
+        
     }
 
     return (
