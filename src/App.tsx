@@ -4,7 +4,7 @@ import Landing from './pages/Landing';
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import Chat from './pages/Chat';
 import HeaderComponent from './components/HeaderComponent';
-import Map from './pages/Map';
+import S124 from './pages/S124';
 import Dashboard from './pages/Dashboard';
 import Configuration from './pages/Configuration';
 import { useState } from 'react';
@@ -12,28 +12,37 @@ import MmsClient from './mms-browser-agent/MmsClient';
 import { Certificate } from 'pkijs';
 import { ConnectionContextProvider } from './context/ConnectContext';
 import { MsgContextProvider } from './context/MessageContext';
+import { KeycloakProvider } from './context/KeycloakContext';
+import RoutePlan from './pages/RoutePlan';
+import Connect from './pages/Connect';
 
 function App() {
   
+
   return (
     <Grommet>
-      <ConnectionContextProvider>
-        <MsgContextProvider>
-          <MmsClient />
-          <BrowserRouter>
-            <div>
-              <HeaderComponent />
-              <Routes>
-                <Route path="/" element={<Landing />} />
-                <Route path="/dashboard" element={<Dashboard />} />
-                <Route path="/chat" element={<Chat />} />
-                <Route path="/map" element={<Map />} />
-                <Route path="/conf" element={<Configuration connect={() => {}} />} />
-              </Routes>
-            </div>
-          </BrowserRouter>
-        </MsgContextProvider>
-      </ConnectionContextProvider>
+      <BrowserRouter>
+        <KeycloakProvider>
+          <ConnectionContextProvider>
+            <MsgContextProvider>
+              <MmsClient />
+              
+                <div>
+                  <HeaderComponent />
+                  <Routes>
+                    <Route path="/" element={<Landing />} />
+                    <Route path="/dashboard" element={<Dashboard />} />
+                    <Route path="/chat" element={<Chat />} />
+                    <Route path="/s124" element={<S124 />} />
+                    <Route path="/routeplan" element={<RoutePlan />} />
+                    <Route path="/connect" element={<Connect connect={() => {}} />} />
+                    <Route path="/conf" element={<Configuration connect={() => {}} />} />
+                  </Routes>
+                </div>
+            </MsgContextProvider>
+          </ConnectionContextProvider>
+        </KeycloakProvider>
+      </BrowserRouter>
     </Grommet>
   );
 }
