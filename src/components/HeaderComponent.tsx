@@ -2,18 +2,25 @@ import { Box, Button, Header, Menu } from "grommet";
 import { Link } from "react-router-dom";
 import { useConnectionState } from "../context/ConnectContext";
 import { useEffect, useState } from "react";
+import useKeycloak from "../hooks/useKeycloak";
 
 
 function HeaderComponent() {
   const connectionState = useConnectionState();
   const [background, setBackground] = useState("brand");
   const [mrn, setMrn] = useState("Not connected");
+  const { keycloak, authenticated } = useKeycloak();
   useEffect(() => {
+    if (authenticated) {
+      console.log(keycloak?.tokenParsed);
+      setBackground("green");
+    }
+    /*
     if (connectionState.connected) {
       setBackground("green");
       setMrn(connectionState.mrn);
-    }
-  }, [connectionState]);
+    }*/
+  }, [connectionState, authenticated]);
     return (
     <Header background={background}>
       <span>{mrn}</span>

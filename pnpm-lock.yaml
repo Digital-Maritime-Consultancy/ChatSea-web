@@ -32,12 +32,18 @@ dependencies:
   bigint-conversion:
     specifier: ^2.4.3
     version: 2.4.3
+  dotenv:
+    specifier: ^16.4.5
+    version: 16.4.5
   fast-xml-parser:
     specifier: ^4.5.0
     version: 4.5.0
   grommet:
     specifier: ^2.42.0
     version: 2.42.0(react-dom@18.3.1)(react@18.3.1)(styled-components@6.1.13)
+  keycloak-js:
+    specifier: 21.1.2
+    version: 21.1.2
   leaflet:
     specifier: ^1.9.4
     version: 1.9.4
@@ -3696,6 +3702,10 @@ packages:
     resolution: {integrity: sha512-3oSeUO0TMV67hN1AmbXsK4yaqU7tjiHlbxRDZOpH0KW9+CeX4bRAaX0Anxt0tx2MrpRpWwQaPwIlISEJhYU5Pw==}
     dev: false
 
+  /base64-js@1.5.1:
+    resolution: {integrity: sha512-AKpaYlHn8t4SVbOHCy+b5+KKgvR4vrsD8vbvrbiQJps7fKDTkjkDry6ji0rUJjC0kzbNePLwzxq8iypo41qeWA==}
+    dev: false
+
   /batch@0.6.1:
     resolution: {integrity: sha512-x+VAiMRL6UPkx+kudNvxTl6hB2XNNCG2r+7wixVfIYwu/2HKRXimwQyaumLjMveWvT2Hkd/cAJw+QBMfJ/EKVw==}
     dev: false
@@ -4726,6 +4736,11 @@ packages:
   /dotenv@10.0.0:
     resolution: {integrity: sha512-rlBi9d8jpv9Sf1klPjNfFAuWDjKLwTIJJ/VxtoTwIR6hnZxcEOQCZg2oIL3MWBYw5GpUDKOEnND7LXTbIpQ03Q==}
     engines: {node: '>=10'}
+    dev: false
+
+  /dotenv@16.4.5:
+    resolution: {integrity: sha512-ZmdL2rui+eB2YwhsWzjInR8LldtZHGDoQ1ugH85ppHKwpUHL7j7rN0Ti9NCnGiQbhaZ11FpR+7ao1dNsmduNUg==}
+    engines: {node: '>=12'}
     dev: false
 
   /duplexer@0.1.2:
@@ -7124,6 +7139,10 @@ packages:
     hasBin: true
     dev: false
 
+  /js-sha256@0.9.0:
+    resolution: {integrity: sha512-sga3MHh9sgQN2+pJ9VYZ+1LPwXOxuBJBA5nrR5/ofPfuiJBE2hnjsaN8se8JznOmGLN2p49Pe5U/ttafcs/apA==}
+    dev: false
+
   /js-tokens@4.0.0:
     resolution: {integrity: sha512-RdJUflcE3cUzKiMqQgsCu06FPu9UdIJO0beYbPhHN4k6apgJtifcoCtT9bcxOpYBtpD2kCM6Sbzg4CausW/PKQ==}
     dev: false
@@ -7257,6 +7276,13 @@ packages:
       array.prototype.flat: 1.3.2
       object.assign: 4.1.5
       object.values: 1.2.0
+    dev: false
+
+  /keycloak-js@21.1.2:
+    resolution: {integrity: sha512-+6r1BvmutWGJBtibo7bcFbHWIlA7XoXRCwcA4vopeJh59Nv2Js0ju2u+t8AYth+C6Cg7/BNfO3eCTbsl/dTBHw==}
+    dependencies:
+      base64-js: 1.5.1
+      js-sha256: 0.9.0
     dev: false
 
   /keyv@4.5.4:
