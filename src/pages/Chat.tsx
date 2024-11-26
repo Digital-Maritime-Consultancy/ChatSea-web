@@ -4,6 +4,7 @@ import {useConnectionState} from "../context/ConnectContext";
 import {sendDirectMsg, sendSubjectMsg} from "../mms-browser-agent/core";
 import {useInjectDependencies} from "../mms-browser-agent/injectDependencies";
 import {useMsgState, useMsgStateDispatch} from "../context/MessageContext";
+import { getS100FileName, isS100File } from "../util/S100FileUtil";
 
 const Chat = () => {
   const [receiverType, setReceiverType] = useState("");
@@ -33,14 +34,23 @@ const Chat = () => {
       // Decode the Uint8Array into a string
       const decodedData = new TextDecoder().decode(msgState.mmtpMsgData);
 
-      // Construct the display message
-      const displayMessage = `Sender: ${msgState.senderMrn}\nMessage: ${decodedData}`;
-
-      // Prepend the new message to the receivedMessages array
-      setReceivedMessages((prevMessages) => [displayMessage, ...prevMessages]);
+      if (isS100File(decodedData)) {
+        // Construct the display message
+        const displayMessage = `Sender: ${msgState.senderMrn}\nMessage: ${getS100FileName(decodedData)}`;
+        // Prepend the new message to the receivedMessages array
+        addChatMessage(displayMessage);
+      } else {
+        // Construct the display message
+        const displayMessage = `Sender: ${msgState.senderMrn}\nMessage: ${decodedData}`;
+        // Prepend the new message to the receivedMessages array
+        addChatMessage(displayMessage);
+      }
     }
   }, [msgState]);
 
+  const addChatMessage = (message: string) => {
+    setReceivedMessages((prevMessages) => [message, ...prevMessages]);
+  }
 
   const handleSendClick = async () => {
     const encoder = new TextEncoder();

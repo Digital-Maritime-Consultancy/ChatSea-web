@@ -7,7 +7,7 @@ import { parseS124 } from "../util/s124Parser";
 import { getMeanPosition } from "../util/s124Parser";
 import S100Data from "../models/S100data";
 import { useMsgState } from "../context/MessageContext";
-import { isS100File } from "../util/S100FileChecker";
+import { isS100File } from "../util/S100FileUtil";
 
 export interface MapProp {
 }
