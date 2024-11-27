@@ -1,0 +1,15 @@
+{
+  "files": {
+    "main.css": "/Digital-Maritime-Consultancy/maas-chatsea-pages/static/css/main.f855e6bc.css",
+    "main.js": "/Digital-Maritime-Consultancy/maas-chatsea-pages/static/js/main.0d53218c.js",
+    "static/js/646.3fcdb31b.chunk.js": "/Digital-Maritime-Consultancy/maas-chatsea-pages/static/js/646.3fcdb31b.chunk.js",
+    "index.html": "/Digital-Maritime-Consultancy/maas-chatsea-pages/index.html",
+    "main.f855e6bc.css.map": "/Digital-Maritime-Consultancy/maas-chatsea-pages/static/css/main.f855e6bc.css.map",
+    "main.0d53218c.js.map": "/Digital-Maritime-Consultancy/maas-chatsea-pages/static/js/main.0d53218c.js.map",
+    "646.3fcdb31b.chunk.js.map": "/Digital-Maritime-Consultancy/maas-chatsea-pages/static/js/646.3fcdb31b.chunk.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.f855e6bc.css",
+    "static/js/main.0d53218c.js"
+  ]
+}
