@@ -14,7 +14,6 @@ interface FlyerProps {
 }
 
 interface RouteState {
-    isPlanning: boolean;
     isSelectingDestination: boolean;
     startPoint?: LatLngTuple;
     endPoint?: LatLngTuple;
@@ -58,7 +57,6 @@ export const Map = forwardRef(({  }: MapProp, ref) => {
     // ARP 관련
     const [isRoutingEnabled, setIsRoutingEnabled] = useState<boolean>(false);
     const [routeState, setRouteState] = useState<RouteState>({
-        isPlanning: false,
         isSelectingDestination: false,
         isCalculating: false
     });
@@ -125,7 +123,6 @@ export const Map = forwardRef(({  }: MapProp, ref) => {
                     if (window.confirm('Start Automatic Route Planning from this location?')) {
                         setRouteState({
                             ...routeState,
-                            isPlanning: true,
                             isSelectingDestination: true,
                             startPoint: clickedPoint
                         });
@@ -155,7 +152,6 @@ export const Map = forwardRef(({  }: MapProp, ref) => {
                             setTempLocationMarkers({});
                             setRouteState({
                                 ...routeState,
-                                isPlanning: false,
                                 isSelectingDestination: false,
                                 isCalculating: false
                             });
@@ -191,7 +187,6 @@ export const Map = forwardRef(({  }: MapProp, ref) => {
                             setFooterMessage('');
                             setRouteState({
                                 ...routeState,
-                                isPlanning: false,
                                 isSelectingDestination: false,
                                 isCalculating: false
                             });
