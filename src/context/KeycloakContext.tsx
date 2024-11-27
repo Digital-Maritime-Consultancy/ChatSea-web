@@ -37,7 +37,8 @@ import React, {
   
       const initKeycloak = async () => {
         const keycloackConfig = {
-          url: process.env.REACT_APP_MAAS_KEYCLOAK_URL as string,
+            url: process.env.REACT_APP_MAAS_KEYCLOAK_URL+'/auth' as string,
+            authServerUrl: process.env.REACT_APP_MAAS_KEYCLOAK_URL as string,
           realm: process.env.REACT_APP_MAAS_KEYCLOAK_REALM as string,
           clientId: process.env.REACT_APP_MAAS_KEYCLOAK_CLIENT as string,
         }
@@ -53,7 +54,7 @@ import React, {
             if (!authenticated) {
               navigate('/');
             } else {
-                navigate('/dashboard');
+                navigate('/connect');
             }
           })
           .catch((error) => {
