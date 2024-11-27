@@ -20,29 +20,17 @@ export const requestARP = async (start: LatLngTuple, end: LatLngTuple) : Promise
     if (!response.ok) {
       const errorText = await response.json();
       throw new Error(`${errorText.error}, CODE: ${errorText.error_code}`);
+    } else {
+      const routeData = await response.json();
+      const destinations = routeData.destinations;
+  
+      return destinations.map((destination: { latitude: number; longitude: number }) => {
+        const latitude = destination.latitude;
+        const longitude = destination.longitude;
+        return [latitude, longitude] as LatLngTuple;
+      });
     }
-
-    const data = await response.json();
-    const destinations = data.destinations;
-
-    return destinations.map((destination: { latitude: number; longitude: number }) => {
-      const latitude = destination.latitude;
-      const longitude = destination.longitude;
-      return [latitude, longitude] as LatLngTuple;
-    });
-    
   } catch (error) {
     throw error;
   }
 };
-
-/*
-      // 서버에 경로 계산 요청
-      final response = await http.get(Uri.parse(uri));
-
-      debugPrint('Response data: ${response.body}');
-
-      if (response.statusCode == 200) {
-        final Map<String, dynamic> decodedData = json.decode(response.body);
-        final List<dynamic> destinations = decodedData['destinations'];
-*/

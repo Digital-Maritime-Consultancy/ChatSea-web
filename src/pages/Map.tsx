@@ -65,7 +65,7 @@ export const Map = forwardRef(({  }: MapProp, ref) => {
         start?: LatLngTuple;
         end?: LatLngTuple;
     }>({});
-    const [routePolyline, setRoutePolyline] = useState<LatLngTuple[][]>([]);
+    const [routePolyline, setRoutePolyline] = useState<LatLngTuple[]>([]);
 
     // flyTo
     useImperativeHandle(ref, () => ({
@@ -110,7 +110,7 @@ export const Map = forwardRef(({  }: MapProp, ref) => {
         setRouteState: (state: RouteState) => void;
         setFooterMessage: (message: string) => void;
         setTempLocationMarkers: (markers: { start?: LatLngTuple; end?: LatLngTuple; }) => void;
-        setRoutePolyline: (polyline: LatLngTuple[][]) => void;
+        setRoutePolyline: (polyline: LatLngTuple[]) => void;
     }) => {
         useMapEvents({
             click: async (event) => {
@@ -130,6 +130,7 @@ export const Map = forwardRef(({  }: MapProp, ref) => {
                         setFooterMessage('Choose a destination');
                     }
                 } else {
+                    // Select Destination point & Request ARP to API
                     if (window.confirm('Make this location as destination?')) {
                         setRouteState({
                             ...routeState,
@@ -142,8 +143,7 @@ export const Map = forwardRef(({  }: MapProp, ref) => {
                             
                         try {
                             const routeData = await requestARP(routeState.startPoint!, clickedPoint);
-                            console.log(routeData);
-                            // TODO : add Polyline to the map
+                            setRoutePolyline(routeData);
                             setFooterMessage('Route calculated');
                         } catch (error) {
                             setFooterMessage('[!] Error calculating route : ' + error);
@@ -257,6 +257,15 @@ export const Map = forwardRef(({  }: MapProp, ref) => {
                     >
                         <Popup>Destination Point</Popup>
                     </Marker>
+                )}
+
+                {/* Draw ARP route */}
+                {routePolyline && (
+                    <Polyline 
+                        pathOptions={limeOptions} 
+                        positions={routePolyline}
+                    >
+                    </Polyline>
                 )}
 
                 <Flyer location={location}></Flyer>
