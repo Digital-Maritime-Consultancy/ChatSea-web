@@ -1,4 +1,4 @@
-import { Box, Button, FileInput, Heading, Main, Paragraph, Select } from "grommet";
+import { Box, Button, Card, CardBody, CardFooter, CardHeader, FileInput, Heading, Layer, Main, Paragraph, Select, Text } from "grommet";
 import { useContext, useState } from "react";
 import { useConnectionState, useConnectionStateDispatch } from "../context/ConnectContext";
 import { loadCertAndPrivateKeyFromFiles } from "../mms-browser-agent/core";
@@ -14,6 +14,8 @@ const Configuration = ({ connect }: ConfigurationProp) => {
   const [certFile, setCertFile] = useState<File | null>(null);
   const [privKeyFile, setPrivKeyFile] = useState<File | null>(null);
   const [wsUrl, setWsUrl] = useState<string>("");
+  const [show, setShow] = useState(false);
+  const [downloadReady, setDownloadReady] = useState(false);
 
   const readMrnFromCert = (cert: Certificate): string => {
     let ownMrn = "";
@@ -47,8 +49,15 @@ const Configuration = ({ connect }: ConfigurationProp) => {
         ws: undefined,
       });
     });
-    console.log("Config done")
   };
+
+  const issueCert = () => {
+    setDownloadReady(true);
+  }
+
+  const downloadCert = () => {
+
+  }
 
   return (
     <Main pad="large">
@@ -67,6 +76,34 @@ const Configuration = ({ connect }: ConfigurationProp) => {
         <FileInput name="certificate" onChange={({ target: { files } }) => setCertFile(files![0])} />
         <Heading level={3}>Select private key</Heading>
         <FileInput name="privateKey" onChange={({ target: { files } }) => setPrivKeyFile(files![0])} />
+        <Heading level={4}>Don't have certificate and private key?</Heading>
+        <Button label="Click here to issue new certificate and private key" secondary onClick={() => setShow(true)}/>
+        {show && (
+        <Layer
+          onEsc={() => setShow(false)}
+          onClickOutside={() => setShow(false)}
+        >
+          <Card>
+            <CardHeader pad="small"><Heading level={3}>Issue new certificate</Heading></CardHeader>
+            <CardBody pad="small">
+            {!downloadReady ? (
+              <Text>Certificate service will cost 100 USD per a new cert. Do you want to proceed?</Text>
+            ) : (
+              <Text>Your certificate is ready for download.</Text>
+            )}
+            </CardBody>
+            <CardFooter pad="small" background="light-2">
+            {!downloadReady ? (
+              <Button label="Proceed" onClick={issueCert} primary />
+            ) : (
+              <Button label="Download" onClick={() => downloadCert()} primary />
+            )}
+            <Button label="Close" onClick={() => setShow(false)} />    
+            </CardFooter>
+          </Card>
+          
+        </Layer>
+      )}
       </Box>
       <Box pad={{ top: "medium" }}>
         <Button label="Connect" primary onClick={handleConnect} />
