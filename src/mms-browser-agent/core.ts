@@ -1,6 +1,6 @@
 import {
     ApplicationMessage,
-    ApplicationMessageHeader,
+    ApplicationMessageHeader, Connect,
     IApplicationMessage,
     MmtpMessage,
     MsgType,
@@ -210,7 +210,7 @@ function bytesToBase64(bytes: Uint8Array): string {
     return btoa(binString);
 }
 
-export async function sendSubjectMsg(subj : string, body : Uint8Array) {
+export async function sendSubjectMsg(subj : string, body : Uint8Array, signingKey : CryptoKey, ws : WebSocket, mrn : string) {
     // set expiration to be one hour from now
     const expires = new Date();
     expires.setTime(expires.getTime() + 3_600_000);
@@ -224,7 +224,7 @@ export async function sendSubjectMsg(subj : string, body : Uint8Array) {
                 applicationMessage: ApplicationMessage.create({
                     header: ApplicationMessageHeader.create({
                         expires: Math.floor(expires.getTime() / 1000),
-                        sender: state.ownMrn,
+                        sender: mrn,
                         bodySizeNumBytes: body.length,
                         subject: subj,
                     }),
@@ -234,11 +234,11 @@ export async function sendSubjectMsg(subj : string, body : Uint8Array) {
         })
     });
 
-    if (state.privateKey) {
-        let signedSendMsg = await signMessage(sendMsg, true, state.privateKey)
+    if (signingKey) {
+        let signedSendMsg = await signMessage(sendMsg, true, signingKey)
         const toBeSent = MmtpMessage.encode(signedSendMsg).finish();
-        if (state.ws) {
-            state.ws.send(toBeSent);
+        if (ws) {
+            ws.send(toBeSent);
         } else {
             console.log("Could not send message - No websocket")
         }
@@ -248,7 +248,7 @@ export async function sendSubjectMsg(subj : string, body : Uint8Array) {
 
 }
 
-export async function sendDirectMsg(subj : string, body : Uint8Array, receiver : string) {
+export async function sendDirectMsg(body : Uint8Array, receiver : string, signingKey : CryptoKey, ws : WebSocket, mrn : string) {
     // set expiration to be one hour from now
     const expires = new Date();
     expires.setTime(expires.getTime() + 3_600_000);
@@ -262,7 +262,7 @@ export async function sendDirectMsg(subj : string, body : Uint8Array, receiver :
                 applicationMessage: ApplicationMessage.create({
                     header: ApplicationMessageHeader.create({
                         expires: Math.floor(expires.getTime() / 1000),
-                        sender: state.ownMrn,
+                        sender: mrn,
                         bodySizeNumBytes: body.length,
                         recipients: {
                             recipients: [receiver]
@@ -274,16 +274,26 @@ export async function sendDirectMsg(subj : string, body : Uint8Array, receiver :
         })
     });
 
-    if (state.privateKey) {
-        let signedSendMsg = await signMessage(sendMsg, false, state.privateKey)
+    if (signingKey) {
+        let signedSendMsg = await signMessage(sendMsg, false,signingKey)
         const toBeSent = MmtpMessage.encode(signedSendMsg).finish();
-        if (state.ws) {
-            state.ws.send(toBeSent);
+        if (ws) {
+            ws.send(toBeSent);
         } else {
             console.log("Could not send message - No websocket")
         }
     } else {
         console.log("Could not send message - No signature key")
+    }
+}
+
+export async function sendMsg(msg : MmtpMessage, ws : WebSocket) {
+    const toBeSent = MmtpMessage.encode(msg).finish();
+    if (ws) {
+        ws.send(toBeSent);
+        console.log("MMTP msg sent")
+    } else {
+        console.error("Could not send message - No Websocket connection")
     }
 }
 
@@ -786,6 +796,22 @@ function showSmmpSessions(sessions : Map<string,RemoteClient>) {
         activeSmmpSessionsDiv.appendChild(ul);
         activeSmmpSessionsDiv.hidden = false;
     }
+}
+
+export function getConnectMsg(mrn : string ) {
+    // Create the connect message with the provided MRN
+    const connectMsg = MmtpMessage.create({
+        msgType: MsgType.PROTOCOL_MESSAGE,
+        uuid: uuidv4(),
+        protocolMessage: ProtocolMessage.create({
+            protocolMsgType: ProtocolMessageType.CONNECT_MESSAGE,
+            connectMessage: Connect.create({
+                ownMrn: mrn // Assign the given MRN
+            })
+        })
+    });
+
+    return connectMsg;
 }
 
 export async function handleSegmentedMessage(header : ISmmpHeader, plaintext : Uint8Array) {

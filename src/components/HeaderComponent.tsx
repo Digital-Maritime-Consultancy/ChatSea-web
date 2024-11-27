@@ -1,29 +1,33 @@
 import { Box, Button, Header, Menu } from "grommet";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useConnectionState } from "../context/ConnectContext";
 import { useEffect, useState } from "react";
 import useKeycloak from "../hooks/useKeycloak";
+import { useMmsContext } from '../context/MmsContext';
 
 
 function HeaderComponent() {
-  const connectionState = useConnectionState();
   const [background, setBackground] = useState("brand");
-  const [mrn, setMrn] = useState("MMS: Not connected");
   const { keycloak, authenticated } = useKeycloak();
+  const navigate = useNavigate();
+  const { connected, mrn } = useMmsContext();
+  const [displayMrn, setDisplayMrn] = useState<string>()
   useEffect(() => {
     if (authenticated) {
       console.log(keycloak?.tokenParsed);
     }
-    if (connectionState.connected) {
+    if (connected) { // note update to the mmms context
+      console.log("connected?", connected);
       setBackground("green");
-      setMrn(connectionState.mrn);
+      console.log(mrn)
+      setDisplayMrn(mrn);
     }
-  }, [connectionState, authenticated]);
+  }, [connected, authenticated, mrn]);
     return (
     <Header background={background}>
-      <span>{mrn}</span>
+      <span>{displayMrn}</span>
       
-      {connectionState.connected && (
+      {connected && (
         <>
         <Button hoverIndicator ><Link to="/dashboard">Dashboard</Link></Button>
         <Button hoverIndicator ><Link to="/s124">Navigational Warning</Link></Button>
@@ -32,12 +36,13 @@ function HeaderComponent() {
         <Button hoverIndicator ><Link to="/conf">Configuration</Link></Button>
         </>
       )}
-      {!connectionState.connected && (
+      {!connected && (
         <>
-        <Button hoverIndicator ><Link to="/">Home</Link></Button>
-        <Button hoverIndicator ><Link to="/connect">Connect</Link></Button>
+          <Button hoverIndicator onClick={() => navigate("/")} >Home</Button>
+          <Button hoverIndicator onClick={() => navigate("/connect")} >Connect</Button>
         </>
-        )}
+      )}
+
       <Menu label="account" items={[{ label: 'logout', onClick: () => keycloak?.logout() }]} />
     </Header>
     );

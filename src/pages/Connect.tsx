@@ -1,19 +1,18 @@
 import { Box, Button, FileInput, Heading, Main, Paragraph, Select } from "grommet";
-import { useContext, useState } from "react";
-import { useConnectionState, useConnectionStateDispatch } from "../context/ConnectContext";
+import { useState } from "react";
 import { loadCertAndPrivateKeyFromFiles } from "../mms-browser-agent/core";
 import { Certificate } from "pkijs";
+import {useMmsContext} from "../context/MmsContext";
 
 export interface ConfigurationProp {
   connect: () => void;
 }
 
-const Configuration = ({ connect }: ConfigurationProp) => {
-  const connectionState = useConnectionState();
-  const setConnectionState = useConnectionStateDispatch();
+const Configuration = () => {
   const [certFile, setCertFile] = useState<File | null>(null);
   const [privKeyFile, setPrivKeyFile] = useState<File | null>(null);
   const [wsUrl, setWsUrl] = useState<string>("");
+  const {connect, mrn} = useMmsContext();
 
   const readMrnFromCert = (cert: Certificate): string => {
     let ownMrn = "";
@@ -37,15 +36,7 @@ const Configuration = ({ connect }: ConfigurationProp) => {
     }
     loadCertAndPrivateKeyFromFiles(certFile, privKeyFile).then(async (certBundle) => {
       const mrn = readMrnFromCert(certBundle.certificate);
-      await setConnectionState({
-        ...connectionState,
-        certificate: certBundle.certificate,
-        privateKey: certBundle.privateKey,
-        privateKeyEcdh: certBundle.privateKeyEcdh,
-        wsUrl: wsUrl,
-        mrn: mrn,
-        ws: undefined,
-      });
+      connect(wsUrl, certBundle.privateKey, certBundle.certificate, mrn)
     });
     console.log("Config done")
   };
