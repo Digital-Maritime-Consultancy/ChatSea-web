@@ -1,46 +1,49 @@
 import { Box, Button, Header, Menu } from "grommet";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useConnectionState } from "../context/ConnectContext";
 import { useEffect, useState } from "react";
 import useKeycloak from "../hooks/useKeycloak";
+import MMSStatus, { Status } from "./MMSStatus";
 
 
 function HeaderComponent() {
   const connectionState = useConnectionState();
   const [background, setBackground] = useState("brand");
-  const [mrn, setMrn] = useState("MMS: Not connected");
+  const [mmsConnStatus, setMmsConnStatus] = useState(Status.NotConnected);
   const { keycloak, authenticated } = useKeycloak();
+  const navigate = useNavigate();
   useEffect(() => {
     if (authenticated) {
-      console.log(keycloak?.tokenParsed);
+      //console.log(keycloak?.tokenParsed);
     }
     if (connectionState.connected) {
-      setBackground("green");
-      setMrn(connectionState.mrn);
+      setMmsConnStatus(Status.Connected);
     }
   }, [connectionState, authenticated]);
-    return (
+  return (
     <Header background={background}>
-      <span>{mrn}</span>
-      
-      {connectionState.connected && (
+      <MMSStatus status={mmsConnStatus} />
+      {authenticated && (
         <>
-        <Button hoverIndicator ><Link to="/dashboard">Dashboard</Link></Button>
-        <Button hoverIndicator ><Link to="/s124">Navigational Warning</Link></Button>
-        <Button hoverIndicator ><Link to="/routeplan">Route Planning</Link></Button>
-        <Button hoverIndicator ><Link to="/chat">Chat</Link></Button>
-        <Button hoverIndicator ><Link to="/conf">Configuration</Link></Button>
-        </>
-      )}
-      {!connectionState.connected && (
-        <>
-        <Button hoverIndicator ><Link to="/">Home</Link></Button>
-        <Button hoverIndicator ><Link to="/connect">Connect</Link></Button>
-        </>
-        )}
-      <Menu label="account" items={[{ label: 'logout', onClick: () => keycloak?.logout() }]} />
+          {connectionState.connected && (
+            <>
+                <Button hoverIndicator onClick={() => navigate("/dashboard")}>Dashboard</Button>
+                <Button hoverIndicator onClick={() => navigate("/s124")}>Navigational Warning</Button>
+                <Button hoverIndicator onClick={() => navigate("/routeplan")}>Route Planning</Button>
+                <Button hoverIndicator onClick={() => navigate("/chat")}>Chat</Button>
+                <Button hoverIndicator onClick={() => navigate("/conf")}>Configuration</Button>
+            </>
+          )}
+          {!connectionState.connected && (
+            <>
+              <Button hoverIndicator onClick={() => navigate("/")} >Home</Button>
+              <Button hoverIndicator onClick={() => navigate("/connect")} >Connect</Button>
+            </>
+          )}
+          <Menu label="Account" items={[{ label: 'logout', onClick: () => keycloak?.logout() }]} />
+        </>)}
     </Header>
-    );
+  );
 }
 
 export default HeaderComponent;

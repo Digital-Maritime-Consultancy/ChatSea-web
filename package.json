@@ -16,6 +16,7 @@
     "dotenv": "^16.4.5",
     "fast-xml-parser": "^4.5.0",
     "grommet": "^2.42.0",
+    "grommet-icons": "^4.12.1",
     "keycloak-js": "21.1.2",
     "leaflet": "^1.9.4",
     "pkijs": "^3.2.4",
