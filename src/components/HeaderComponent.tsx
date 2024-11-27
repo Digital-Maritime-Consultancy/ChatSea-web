@@ -22,9 +22,10 @@ function HeaderComponent() {
     return (
     <Header background={background}>
       <span>{mrn}</span>
-      <Button hoverIndicator ><Link to="/dashboard">Home</Link></Button>
+      
       {connectionState.connected && (
         <>
+        <Button hoverIndicator ><Link to="/dashboard">Dashboard</Link></Button>
         <Button hoverIndicator ><Link to="/s124">Navigational Warning</Link></Button>
         <Button hoverIndicator ><Link to="/routeplan">Route Planning</Link></Button>
         <Button hoverIndicator ><Link to="/chat">Chat</Link></Button>
@@ -32,7 +33,10 @@ function HeaderComponent() {
         </>
       )}
       {!connectionState.connected && (
+        <>
+        <Button hoverIndicator ><Link to="/">Home</Link></Button>
         <Button hoverIndicator ><Link to="/connect">Connect</Link></Button>
+        </>
         )}
       <Menu label="account" items={[{ label: 'logout', onClick: () => keycloak?.logout() }]} />
     </Header>

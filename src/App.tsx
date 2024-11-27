@@ -26,7 +26,6 @@ function App() {
           <ConnectionContextProvider>
             <MsgContextProvider>
               <MmsClient />
-              
                 <div>
                   <HeaderComponent />
                   <Routes>
