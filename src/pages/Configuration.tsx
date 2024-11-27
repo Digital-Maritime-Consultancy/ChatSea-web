@@ -3,6 +3,8 @@ import { useContext, useState } from "react";
 import { useConnectionState, useConnectionStateDispatch } from "../context/ConnectContext";
 import { loadCertAndPrivateKeyFromFiles } from "../mms-browser-agent/core";
 import { Certificate } from "pkijs";
+import { ServiceInfo, ServiceTopic } from "../models/serviceTopic";
+import { useServiceTopic } from "../context/ServiceTopicContext";
 
 export interface ConfigurationProp {
   connect: () => void;
@@ -14,6 +16,9 @@ const Configuration = ({ connect }: ConfigurationProp) => {
   const [certFile, setCertFile] = useState<File | null>(null);
   const [privKeyFile, setPrivKeyFile] = useState<File | null>(null);
   const [wsUrl, setWsUrl] = useState<string>("");
+  const {allowedServices, setAllowedServices, chosenService, setChosenService} = useServiceTopic();
+  
+  const serviceTopics = allowedServices.map((service) => service.name);
 
   const readMrnFromCert = (cert: Certificate): string => {
     let ownMrn = "";
@@ -36,7 +41,13 @@ const Configuration = ({ connect }: ConfigurationProp) => {
       <Box>
         <Heading level={3}>Select Service</Heading>
         <Box pad="medium">
-          <CheckBoxGroup options={["Navigational Warning", "Route Planning", "Chat", "Service Announcement"]} />
+        <CheckBoxGroup
+        value={chosenService}
+        onChange={(event: any) => {
+          setChosenService(event.value);
+        }}
+        options={serviceTopics}
+      />
         </Box>
       <Box pad={{ top: "medium" }}>
         <Button label="Save" primary onClick={handleSave} />

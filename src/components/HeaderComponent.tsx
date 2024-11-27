@@ -4,6 +4,7 @@ import { useConnectionState } from "../context/ConnectContext";
 import { useEffect, useState } from "react";
 import useKeycloak from "../hooks/useKeycloak";
 import MMSStatus, { Status } from "./MMSStatus";
+import { useServiceTopic } from "../context/ServiceTopicContext";
 
 
 function HeaderComponent() {
@@ -11,6 +12,7 @@ function HeaderComponent() {
   const [background, setBackground] = useState("brand");
   const [mmsConnStatus, setMmsConnStatus] = useState(Status.NotConnected);
   const { keycloak, authenticated } = useKeycloak();
+  const {allowedServices, setAllowedServices, chosenService, setChosenService} = useServiceTopic();
   const navigate = useNavigate();
   useEffect(() => {
     if (authenticated) {
@@ -28,9 +30,11 @@ function HeaderComponent() {
           {connectionState.connected && (
             <>
                 <Button hoverIndicator onClick={() => navigate("/dashboard")}>Dashboard</Button>
-                <Button hoverIndicator onClick={() => navigate("/s124")}>Navigational Warning</Button>
-                <Button hoverIndicator onClick={() => navigate("/routeplan")}>Route Planning</Button>
-                <Button hoverIndicator onClick={() => navigate("/chat")}>Chat</Button>
+                {allowedServices.map((service) => {
+                  if (chosenService.includes(service.name)) {
+                    return <Button hoverIndicator onClick={() => navigate(service.link)}>{service.name}</Button>
+                  }
+                })}
                 <Button hoverIndicator onClick={() => navigate("/conf")}>Configuration</Button>
             </>
           )}
