@@ -180,8 +180,7 @@ export const Map = forwardRef(({  }: MapProp, ref) => {
                     label={"Automatic Route Planning"}
                     checked={isRoutingEnabled}
                     onChange={() => {
-                        setIsRoutingEnabled(!isRoutingEnabled);
-                        if (isRoutingEnabled) {
+                        if (!isRoutingEnabled) {
                             setFooterMessage('Route planning is enabled. Choose a starting point.');
                         } else {
                             setFooterMessage('');
@@ -192,8 +191,8 @@ export const Map = forwardRef(({  }: MapProp, ref) => {
                             });
                             setTempLocationMarkers({});
                         }
+                        setIsRoutingEnabled(!isRoutingEnabled);
                     }}
-                    
                 />
             </Box>
             
