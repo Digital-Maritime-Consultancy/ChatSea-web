@@ -51,7 +51,7 @@ export const S124 = forwardRef(({ }: MapProp, ref) => {
                     if (Array.isArray(result)) {
                         setData([...data, ...result]);
                     } else {
-                        setData([...data, result]);
+                        setData([...data, result!]);
                     }
                 });
             }
