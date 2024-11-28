@@ -32,7 +32,10 @@ const useWs = () => {
         }
       };
 
-      wsRef.current.onclose = () => {
+      wsRef.current.onclose = (evt) => {
+        if (evt.code !== 1000) {
+          alert("Connection to Edge Router closed unexpectedly: " + evt.reason);
+        }
         console.log('WebSocket disconnected');
         setWsIsConnected(false);
       };
