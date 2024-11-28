@@ -47,6 +47,7 @@ import React, {
         keycloakInstance
           .init({
             onLoad: 'check-sso',
+            flow: 'standard',
             silentCheckSsoRedirectUri: window.location.origin + '/assets/silent-check-sso.html',
           })
           .then((authenticated: boolean) => {
