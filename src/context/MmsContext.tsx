@@ -43,6 +43,8 @@ export const MmsProvider: React.FC<{children: React.ReactNode }> = ({ children }
 
     if (wsIsConnected) {
       handleConnectMmtp(); // Call the async wrapper
+    } else {
+      setConnected(false);
     }
   }, [wsIsConnected]);
 
