@@ -15,13 +15,12 @@ function HeaderComponent() {
   const {allowedServices, setAllowedServices, chosenService, setChosenService} = useServiceTopic();
   const navigate = useNavigate();
   useEffect(() => {
-    if (authenticated) {
-      //console.log(keycloak?.tokenParsed);
-    }
     if (connectionState.connected) {
       setMmsConnStatus(Status.Connected);
     }
   }, [connectionState, authenticated]);
+  useEffect(() => {
+  }, [authenticated]);
   return (
     <Header background={background}>
       <MMSStatus status={mmsConnStatus} />
@@ -40,7 +39,7 @@ function HeaderComponent() {
           )}
           {!connectionState.connected && (
             <>
-              <Button hoverIndicator onClick={() => navigate("/")} >Home</Button>
+              <Button hoverIndicator onClick={() => navigate("/dashboard")}>Dashboard</Button>
               <Button hoverIndicator onClick={() => navigate("/connect")} >Connect</Button>
             </>
           )}
