@@ -32,7 +32,7 @@ function HeaderComponent() {
                 <Button hoverIndicator onClick={() => navigate("/dashboard")}>Dashboard</Button>
                 {allowedServices.map((service) => {
                   if (chosenService.includes(service.name)) {
-                    return <Button hoverIndicator onClick={() => navigate(service.link)}>{service.name}</Button>
+                    return <Button key={service.value} hoverIndicator onClick={() => navigate(service.link)}>{service.name}</Button>
                   }
                 })}
                 <Button hoverIndicator onClick={() => navigate("/conf")}>Configuration</Button>
