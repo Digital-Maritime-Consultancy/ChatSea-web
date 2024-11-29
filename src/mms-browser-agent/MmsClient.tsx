@@ -105,6 +105,23 @@ function MmsClient() {
                         _ws.send(msgBlob);
                         console.log("Sub to direct messages")
 
+                        const svcsubMsg = MmtpMessage.create({
+                            msgType: MsgType.PROTOCOL_MESSAGE,
+                            uuid: uuidv4(),
+                            protocolMessage: ProtocolMessage.create({
+                                protocolMsgType: ProtocolMessageType.SUBSCRIBE_MESSAGE,
+                                subscribeMessage: Subscribe.create({
+                                    subject: 's-124'
+                                })
+                            })
+                        });
+                        msgBlob = MmtpMessage.encode(svcsubMsg).finish();
+
+                        setLastSentMessage(svcsubMsg);
+
+                        _ws.send(msgBlob);
+                        console.log("Sub to S124 messages")
+
                         initialized = true;
 
                         if (ownMrn) {
