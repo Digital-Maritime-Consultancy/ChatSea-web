@@ -4,7 +4,8 @@ import useKeycloak from '../hooks/useKeycloak';
 
 import { closestCenter, DndContext, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable';
-import { ChartType, SortableItem } from '../components/SortableItem';import { UserManagementControllerApi } from '../backend-api/saas-management';
+import { ChartType, SortableItem } from '../components/SortableItem';import { Configuration, MyUserControllerApi, UserManagementControllerApi } from '../backend-api/saas-management';
+import { BASE_PATH } from '../backend-api/saas-management/base';
 
 // Main Dashboard Component
 const Dashboard = () => {
@@ -12,7 +13,6 @@ const Dashboard = () => {
     const [items, setItems] = useState([1,2,3]);
     const [token, setToken] = useState<string>("");
     const [isEditing, setIsEditing] = useState(false);
-    const userController = new UserManagementControllerApi();
     const content= 
         [
         {
@@ -51,9 +51,27 @@ const Dashboard = () => {
         if (keycloak && authenticated) {
             setName(username);
             setToken(keycloak?.token || "");
+            const apiConfig: Configuration = {
+                basePath: BASE_PATH,
+                baseOptions: {
+                    headers: {
+                        'Authorization': `Bearer ${keycloak?.token}`,
+                    },
+                },
+            };
+            const userController = new UserManagementControllerApi(apiConfig);
             userController.getUserServiceSubscriptions(orgMrn, mrn).then((response) => {
                 console.log(response.data);
             });
+            // const userController = new MyUserControllerApi(apiConfig);
+            // userController.getMyUser().then((response) => {
+            //     console.log(response.data);
+            // });
+            // userController.registerServiceUsage({}).then((response) => {
+            //     console.log(response.data);
+            // });
+
+            
         }
         
     }, [authenticated]);
