@@ -20,6 +20,8 @@ function HeaderComponent() {
     }
   }, [connectionState, authenticated]);
   useEffect(() => {
+    console.log("Allowed services: ", allowedServices);
+    console.log("Chosen services: ", chosenService);
   }, [authenticated]);
   return (
     <Header background={background}>
@@ -40,6 +42,9 @@ function HeaderComponent() {
           {!connectionState.connected && (
             <>
               <Button hoverIndicator onClick={() => navigate("/dashboard")}>Dashboard</Button>
+              {chosenService.includes("Route Planning") && allowedServices.filter((service) => service.value === "arp").map(
+                (service) => <Button key={service.value} hoverIndicator onClick={() => navigate(service.link)}>{service.name}</Button>
+              )}
               <Button hoverIndicator onClick={() => navigate("/connect")} >Connect</Button>
             </>
           )}
