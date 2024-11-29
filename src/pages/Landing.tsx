@@ -56,7 +56,7 @@ function Landing() {
                             ChatSea
                         </Heading>
                         <Text size="large" textAlign="center" color="dark-2">
-                            Seamless and Secure Chat for Everyone
+                            MaaS Service Portal for everyone
                         </Text>
                         <Button
                             label="Login"
