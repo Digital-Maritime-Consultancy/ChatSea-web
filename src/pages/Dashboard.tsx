@@ -4,12 +4,15 @@ import useKeycloak from '../hooks/useKeycloak';
 
 import { closestCenter, DndContext, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable';
-import { ChartType, SortableItem } from '../components/SortableItem';
+import { ChartType, SortableItem } from '../components/SortableItem';import { UserManagementControllerApi } from '../backend-api/saas-management';
 
 // Main Dashboard Component
 const Dashboard = () => {
+    const {keycloak, authenticated, username, orgMrn, mrn} = useKeycloak();
     const [items, setItems] = useState([1,2,3]);
+    const [token, setToken] = useState<string>("");
     const [isEditing, setIsEditing] = useState(false);
+    const userController = new UserManagementControllerApi();
     const content= 
         [
         {
@@ -43,11 +46,17 @@ const Dashboard = () => {
             coordinateGetter: sortableKeyboardCoordinates,
         })
     );
-    const { username } = useKeycloak();
     const [name, setName] = useState<string>("");
     useEffect(() => {
-        setName(username);
-    }, [username]);
+        if (keycloak && authenticated) {
+            setName(username);
+            setToken(keycloak?.token || "");
+            userController.getUserServiceSubscriptions(orgMrn, mrn).then((response) => {
+                console.log(response.data);
+            });
+        }
+        
+    }, [authenticated]);
 
     const handleDelete = (id: any) => {
         setItems((prevItems) => prevItems.filter((item) => item !== id));
