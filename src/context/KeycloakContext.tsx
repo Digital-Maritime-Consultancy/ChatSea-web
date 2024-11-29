@@ -48,7 +48,7 @@ import React, {
           .init({
             onLoad: 'check-sso',
             flow: 'standard',
-            silentCheckSsoRedirectUri: window.location.origin + '/assets/silent-check-sso.html',
+            silentCheckSsoRedirectUri: window.location.origin + '/silent-check-sso.html',
           })
           .then((authenticated: boolean) => {
             setAuthenticated(authenticated);
