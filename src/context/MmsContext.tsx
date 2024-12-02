@@ -41,8 +41,6 @@ export const MmsProvider: React.FC<{children: React.ReactNode }> = ({ children }
 
 
   useEffect(() => {
-    console.log("Ws is connected", wsIsConnected);
-
     const handleConnectMmtp = async () => {
       try {
         await connectMmtp(); // Await and handle errors
@@ -95,7 +93,7 @@ export const MmsProvider: React.FC<{children: React.ReactNode }> = ({ children }
         if (msgs) {
           for (const msg of msgs) {
             if (msg.body && msg.header?.sender) {
-              console.log("Set msg state done!, sender is", msg.header?.sender) //Pass using the MsgStateContext
+              console.log("--------Set msg state done!, sender is-------", msg.header?.sender) //Pass using the MsgStateContext
               setMsgState({
                 ...msgState,
                 mmtpMsgData: msg.body,

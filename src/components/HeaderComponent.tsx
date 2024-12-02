@@ -21,6 +21,9 @@ function HeaderComponent() {
       setBackground("green");
       console.log(mrn)
       setDisplayMrn(mrn);
+    } else if (!connected && authenticated) {
+      setBackground("red");
+      setDisplayMrn("Connection lost");
     }
   }, [connected, authenticated, mrn]);
     return (

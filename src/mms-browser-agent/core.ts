@@ -237,6 +237,8 @@ export async function sendSubjectMsg(subj : string, body : Uint8Array, signingKe
 
     if (signingKey) {
         let signedSendMsg = await signMessage(sendMsg, true, signingKey)
+        console.log(signedSendMsg)
+
         const toBeSent = MmtpMessage.encode(signedSendMsg).finish();
         if (ws) {
             ws.send(toBeSent);

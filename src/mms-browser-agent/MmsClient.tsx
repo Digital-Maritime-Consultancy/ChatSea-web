@@ -314,7 +314,7 @@
 //                 };
 //
 //                 const connectMsg = MmtpMessage.create({
-//                     msgType: MsgType.PROTOCOL_MESSAGE,
+//                     msgTye: MsgType.PROTOCOL_MESSAGE,
 //                     uuid: uuidv4(),
 //                     protocolMessage: ProtocolMessage.create({
 //                         protocolMsgType: ProtocolMessageType.CONNECT_MESSAGE,
