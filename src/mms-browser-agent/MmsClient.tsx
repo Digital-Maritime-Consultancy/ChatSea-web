@@ -124,14 +124,14 @@ function MmsClient() {
 
                         initialized = true;
 
-                        if (ownMrn) {
+                       /* if (ownMrn) {
                             await fetch(mrnStoreUrl + "/mrn", {
                                 method: "POST",
                                 body: JSON.stringify({mrn: ownMrn, edgeRouter: edgeRouter}),
                                 mode: "cors",
                                 headers: {"Content-Type": "application/json"}
                             });
-                        }
+                        }*/
                     } else {
 
                         if (mmtpMessage.msgType === MsgType.RESPONSE_MESSAGE) {
