@@ -24,9 +24,8 @@ function App() {
       <BrowserRouter>
         <KeycloakProvider>
           <ConnectionContextProvider>
-            <MmsProvider>
-
-              <MsgContextProvider>
+            <MsgContextProvider>
+              <MmsProvider>
                   <div>
                     <HeaderComponent />
                     <Routes>
@@ -39,8 +38,8 @@ function App() {
                       <Route path="/conf" element={<Configuration connect={() => {}} />} />
                     </Routes>
                   </div>
-              </MsgContextProvider>
-            </MmsProvider>
+              </MmsProvider>
+          </MsgContextProvider>
           </ConnectionContextProvider>
         </KeycloakProvider>
       </BrowserRouter>

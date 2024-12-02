@@ -10,7 +10,6 @@ import { useMmsContext } from '../context/MmsContext';
 const Chat = () => {
   const [receiverType, setReceiverType] = useState("");
   const [receiverMrn, setReceiverMrn] = useState("");
-  const [ws, setWs] = useState<WebSocket | undefined>(undefined);
   const [message, setMessage] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const msgState = useMsgState();
@@ -25,7 +24,6 @@ const Chat = () => {
   useInjectDependencies();
 
   useEffect(() => {
-    console.log(connected);
   }, [useMmsContext()]); //Do something whenever ConnetioNState updates
 
   useEffect(() => {

@@ -1,7 +1,16 @@
 import React, {createContext, useContext, useEffect, useState} from 'react';
 import useWs from '../hooks/useWs';
 import {Certificate} from "pkijs";
-import {getConnectMsg, sendDirectMsg, sendMsg, sendSubjectMsg} from "../mms-browser-agent/core"; // Import the WebSocket management hook
+import {
+  getConnectMsg,
+  sendDirectMsg,
+  sendMsg,
+  sendMsgReceive,
+  sendSubjectMsg,
+  sendSubOwnMrn
+} from "../mms-browser-agent/core";
+import {MsgType, ProtocolMessageType, ResponseEnum} from "../mms/mmtp";
+import {useMsgState, useMsgStateDispatch} from "./MessageContext"; // Import the WebSocket management hook
 
 
 // Define the MMS context type
@@ -22,11 +31,13 @@ const MmsContext = createContext<MmsContextType | undefined>(undefined);
 // Provider component
 export const MmsProvider: React.FC<{children: React.ReactNode }> = ({ children }) => {
   const [url, setUrl] = useState(''); // Store WebSocket URL
-  const { connectWs, disconnectWs, wsIsConnected, getWs } = useWs(); // Manage WebSocket connection
+  const { connectWs, disconnectWs, wsIsConnected, getWs, dequeueMessage, messageQueue } = useWs(); // Manage WebSocket connection
   const [connected, setConnected] = useState(false);
   const [mrn, setMrn] = useState('');
   const [signingKey, setSigningKey] = useState<CryptoKey | undefined>(undefined);
   const [certificate, setCertificate] = useState<Certificate | undefined>(undefined);
+  const setMsgState = useMsgStateDispatch();
+  const msgState = useMsgState();
 
 
   useEffect(() => {
@@ -47,6 +58,72 @@ export const MmsProvider: React.FC<{children: React.ReactNode }> = ({ children }
       setConnected(false);
     }
   }, [wsIsConnected]);
+
+  useEffect(() => {
+    const handleSubSetup = async () => {
+      console.log("Attempt subscribe to own MRN")
+      try {
+        let ws = getWs()
+        if (ws) {
+          await sendSubOwnMrn(mrn, ws)
+
+        } else {
+          console.error("Error no websocket:", ws);
+        }
+      } catch (error) {
+        console.error("Error during attempting to subscribe to own MRN adressed messages:", error);
+      }
+    };
+
+    if (connected) {
+      handleSubSetup(); // Call the async wrapper
+    } else {
+      console.error("Cannot subscribe when no MMTP connection exists");
+    }
+  }, [connected]);
+
+  useEffect(() => {
+    if (messageQueue.length > 0 ) {
+      const newMsg = dequeueMessage(); // Assuming dequeueMessage always returns MmtpMessage
+      if (newMsg && newMsg.msgType === MsgType.RESPONSE_MESSAGE) {
+        if (newMsg.responseMessage?.response === ResponseEnum.ERROR) {
+          console.error(newMsg);
+          return
+        }
+        const msgs = newMsg.responseMessage?.applicationMessages;
+
+        if (msgs) {
+          for (const msg of msgs) {
+            if (msg.body && msg.header?.sender) {
+              console.log("Set msg state done!, sender is", msg.header?.sender) //Pass using the MsgStateContext
+              setMsgState({
+                ...msgState,
+                mmtpMsgData: msg.body,
+                senderMrn: msg.header.sender,
+              });
+            }
+          }
+        }
+      } else if (newMsg && newMsg.msgType === MsgType.PROTOCOL_MESSAGE) {
+        if (
+          newMsg.protocolMessage?.protocolMsgType ===
+          ProtocolMessageType.NOTIFY_MESSAGE
+        ) {
+          const ws = getWs();
+
+          if (ws) {
+            sendMsgReceive(ws); // Acknowledge the protocol message
+            return; // Exit early if processing is complete
+          }
+        }
+      } else {
+        console.error("Unknown msg err", newMsg);
+      }
+    } else {
+      console.log("No new messages to process");
+    }
+  }, [messageQueue]);
+
 
 
 

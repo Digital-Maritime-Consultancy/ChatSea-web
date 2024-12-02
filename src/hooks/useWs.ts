@@ -1,13 +1,36 @@
-import { useState, useEffect, useRef } from 'react';
-import { MmtpMessage, MsgType, ProtocolMessageType, Receive, Filter } from '../mms/mmtp'; // Import relevant types and helpers
-import { v4 as uuidv4 } from 'uuid';
-import {useMsgStateDispatch} from "../context/MessageContext";
-import {verifySignatureOnMessage} from "../mms-browser-agent/core";
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { MmtpMessage, MsgType, ProtocolMessageType, Receive, Filter } from '../mms/mmtp';
+
+
 
 const useWs = () => {
   const [wsIsConnected, setWsIsConnected] = useState(false);
   const wsRef = useRef<WebSocket | null>(null); // Persistent WebSocket instance
   const [wsUrl, setWsUrl] = useState<string | null>(null);
+  const [messageQueue, setMessageQueue] = useState<MmtpMessage[]>([]);
+
+  const dequeueMessage = useCallback((): MmtpMessage => {
+    // Access the current state synchronously
+    const currentQueue = [...messageQueue];
+
+    if (currentQueue.length === 0) {
+      throw new Error("Queue is empty. Cannot dequeue a message.");
+    }
+
+    // Dequeue the first message
+    const dequeuedMessage = currentQueue[0];
+
+    // Update the state without the dequeued message
+    setMessageQueue(currentQueue.slice(1));
+
+    return dequeuedMessage;
+  }, [messageQueue]);
+
+
+
+  const enqueueMessage = useCallback((message: MmtpMessage) => {
+    setMessageQueue((prevQueue: MmtpMessage[]) => [...prevQueue, message]);
+  }, []);
 
   // Connect to WebSocket
   const connectWs = (url: string) => {
@@ -21,18 +44,18 @@ const useWs = () => {
       };
 
       wsRef.current.onmessage = async (msgEvent) => {
-        console.log("NEW INCOMING MSG");
         try {
           const data = msgEvent.data as Blob;
           const bytes = await data.arrayBuffer();
           const msg = MmtpMessage.decode(new Uint8Array(bytes));
-          console.log("Decoded message:", msg);
+          enqueueMessage(msg)
         } catch (error) {
           console.error("Error processing message:", error);
         }
       };
 
       wsRef.current.onclose = (evt) => {
+        console.log("WS CLoses")
         if (evt.code !== 1000) {
           alert("Connection to Edge Router closed unexpectedly: " + evt.reason);
         }
@@ -55,6 +78,8 @@ const useWs = () => {
   };
 
   return {
+    messageQueue,
+    dequeueMessage,
     connectWs,
     disconnectWs,
     wsIsConnected,

@@ -8,7 +8,7 @@ import {
     ProtocolMessageType,
     Receive,
     Recipients,
-    Send,
+    Send, Subscribe,
 } from "../mms/mmtp";
 import {v4 as uuidv4} from "uuid";
 import {Certificate} from "pkijs";
@@ -90,6 +90,7 @@ export async function verifySignatureOnMessage(msg: IApplicationMessage): Promis
         let uint8Arrays: Uint8Array[] = [];
         const textEncoder = new TextEncoder();
         uint8Arrays.push(textEncoder.encode(subject));
+        // @ts-ignore
         uint8Arrays.push(textEncoder.encode(msg.header!.expires.toString(10)));
         uint8Arrays.push(textEncoder.encode(msg.header!.sender!));
         uint8Arrays.push(textEncoder.encode(msg.header!.bodySizeNumBytes!.toString()));
@@ -297,8 +298,8 @@ export async function sendMsg(msg : MmtpMessage, ws : WebSocket) {
     }
 }
 
-
-async function sendMsgReceive() {
+//Request to receive all pending messages from the edgerouter
+export async function sendMsgReceive(ws : WebSocket) {
     const receive = MmtpMessage.create({
         msgType: MsgType.PROTOCOL_MESSAGE,
         uuid: uuidv4(),
@@ -308,9 +309,46 @@ async function sendMsgReceive() {
         })
     });
     const toBeSent = MmtpMessage.encode(receive).finish();
-    console.log("Sent MMTP message: ", toBeSent);
-    if (state.ws) {
-        state.ws.send(toBeSent);
+    if (ws) {
+        ws.send(toBeSent);
+    } else {
+        console.log("Could not send message - No websocket")
+    }
+}
+
+export async function sendSubOwnMrn(ownMrn : string, ws : WebSocket) {
+    const subMsg = MmtpMessage.create({
+        msgType: MsgType.PROTOCOL_MESSAGE,
+        uuid: uuidv4(),
+        protocolMessage: ProtocolMessage.create({
+            protocolMsgType: ProtocolMessageType.SUBSCRIBE_MESSAGE,
+            subscribeMessage: Subscribe.create({
+                directMessages: true
+            })
+        })
+    });
+    const toBeSent = MmtpMessage.encode(subMsg).finish();
+    if (ws) {
+        ws.send(toBeSent);
+    } else {
+        console.log("Could not send message - No websocket")
+    }
+}
+
+export async function sendSubName(subjectName : string, ws : WebSocket) {
+    const subMsg = MmtpMessage.create({
+        msgType: MsgType.PROTOCOL_MESSAGE,
+        uuid: uuidv4(),
+        protocolMessage: ProtocolMessage.create({
+            protocolMsgType: ProtocolMessageType.SUBSCRIBE_MESSAGE,
+            subscribeMessage: Subscribe.create({
+                subject: subjectName
+            })
+        })
+    });
+    const toBeSent = MmtpMessage.encode(subMsg).finish();
+    if (ws) {
+        ws.send(toBeSent);
     } else {
         console.log("Could not send message - No websocket")
     }
@@ -604,6 +642,7 @@ export async function signMessage(msg : MmtpMessage, subject : boolean, signKey 
         uint8Arrays.push(encoder.encode(appMsgHeader.recipients!.recipients![0]));
     }
 
+    // @ts-ignore
     uint8Arrays.push(encoder.encode(appMsgHeader.expires.toString()));
     uint8Arrays.push(encoder.encode(state.ownMrn));
     uint8Arrays.push(encoder.encode(appMsg.body!.length.toString()));
