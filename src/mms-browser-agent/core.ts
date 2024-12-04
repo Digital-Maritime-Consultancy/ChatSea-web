@@ -188,6 +188,7 @@ function bytesToBase64(bytes: Uint8Array): string {
 }
 
 export async function sendSubjectMsg(subj : string, body : Uint8Array, signingKey : CryptoKey, ws : WebSocket, mrn : string) {
+
     // set expiration to be one hour from now
     const expires = new Date();
     expires.setTime(expires.getTime() + 3_600_000);
@@ -213,7 +214,6 @@ export async function sendSubjectMsg(subj : string, body : Uint8Array, signingKe
 
     if (signingKey) {
         let signedSendMsg = await signMessage(mrn, sendMsg, true, signingKey)
-        console.log(signedSendMsg)
 
         const toBeSent = MmtpMessage.encode(signedSendMsg).finish();
         if (ws) {
@@ -406,6 +406,9 @@ export function getSmmpMessage(flags : FlagsEnum[], blcNum : number, totalBlcs :
 
 
 export async function signMessage(mrn : string, msg : MmtpMessage, subject : boolean, signKey : CryptoKey) {
+
+
+
     const appMsgHeader = msg.protocolMessage!.sendMessage!.applicationMessage!.header!
     const appMsg = msg.protocolMessage!.sendMessage!.applicationMessage!
 
