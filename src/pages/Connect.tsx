@@ -1,18 +1,14 @@
-import { Box, Button, FileInput, Heading, Main, Paragraph, Select } from "grommet";
+import { Box, Button, FileInput, Heading, Main, Select } from "grommet";
 import { useState } from "react";
 import { loadCertAndPrivateKeyFromFiles } from "../mms-browser-agent/core";
 import { Certificate } from "pkijs";
 import {useMmsContext} from "../context/MmsContext";
 
-export interface ConfigurationProp {
-  connect: () => void;
-}
-
 const Configuration = () => {
   const [certFile, setCertFile] = useState<File | null>(null);
   const [privKeyFile, setPrivKeyFile] = useState<File | null>(null);
   const [wsUrl, setWsUrl] = useState<string>("");
-  const {connect, mrn} = useMmsContext();
+  const {connect} = useMmsContext();
 
   const readMrnFromCert = (cert: Certificate): string => {
     let ownMrn = "";

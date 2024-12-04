@@ -1,10 +1,8 @@
-import { Box, Button, Header, Menu } from "grommet";
+import { Button, Header, Menu } from "grommet";
 import { Link, useNavigate } from "react-router-dom";
-import { useConnectionState } from "../context/ConnectContext";
 import { useEffect, useState } from "react";
 import useKeycloak from "../hooks/useKeycloak";
 import { useMmsContext } from '../context/MmsContext';
-
 
 function HeaderComponent() {
   const [background, setBackground] = useState("brand");
