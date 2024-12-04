@@ -24,6 +24,9 @@ function HeaderComponent() {
     } else if (!connected && authenticated) {
       setBackground("red");
       setDisplayMrn("Connection lost");
+    } else if (!connected) {
+      setBackground("brand");
+      setDisplayMrn("");
     }
   }, [connected, authenticated, mrn]);
     return (

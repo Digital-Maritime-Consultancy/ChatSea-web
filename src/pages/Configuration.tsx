@@ -1,19 +1,15 @@
 import { Box, Button, CheckBoxGroup, FileInput, Heading, Main, Paragraph, Select } from "grommet";
-import { useContext, useState } from "react";
-import { useConnectionState, useConnectionStateDispatch } from "../context/ConnectContext";
-import { loadCertAndPrivateKeyFromFiles } from "../mms-browser-agent/core";
 import { Certificate } from "pkijs";
+import { useMmsContext } from '../context/MmsContext';
+import { useNavigate } from 'react-router-dom'
 
 export interface ConfigurationProp {
   connect: () => void;
 }
 
 const Configuration = ({ connect }: ConfigurationProp) => {
-  const connectionState = useConnectionState();
-  const setConnectionState = useConnectionStateDispatch();
-  const [certFile, setCertFile] = useState<File | null>(null);
-  const [privKeyFile, setPrivKeyFile] = useState<File | null>(null);
-  const [wsUrl, setWsUrl] = useState<string>("");
+  const {disconnect} = useMmsContext();
+  const navigate = useNavigate();
 
   const readMrnFromCert = (cert: Certificate): string => {
     let ownMrn = "";
@@ -30,6 +26,11 @@ const Configuration = ({ connect }: ConfigurationProp) => {
     console.log("Config done");
   };
 
+  const handleDisconnect = () => {
+    disconnect();
+    navigate("/connect");
+  }
+
   return (
     <Main pad="large">
       <Heading>Configuration</Heading>
@@ -40,6 +41,7 @@ const Configuration = ({ connect }: ConfigurationProp) => {
         </Box>
       <Box pad={{ top: "medium" }}>
         <Button label="Save" primary onClick={handleSave} />
+        <Button label="Disconnect" secondary onClick={handleDisconnect} margin={{ top: "medium" }} />
       </Box>
       </Box>
     </Main>

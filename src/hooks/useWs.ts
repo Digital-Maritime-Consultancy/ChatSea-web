@@ -74,6 +74,7 @@ const useWs = () => {
     if (wsRef.current) {
       wsRef.current.close();
       wsRef.current = null;
+      setWsIsConnected(false);
     }
   };
 

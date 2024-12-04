@@ -1,6 +1,6 @@
 import {
     ApplicationMessage,
-    ApplicationMessageHeader, Connect,
+    ApplicationMessageHeader, Connect, Disconnect,
     IApplicationMessage,
     MmtpMessage,
     MsgType,
@@ -346,6 +346,23 @@ export async function sendSubName(subjectName : string, ws : WebSocket) {
             subscribeMessage: Subscribe.create({
                 subject: subjectName
             })
+        })
+    });
+    const toBeSent = MmtpMessage.encode(subMsg).finish();
+    if (ws) {
+        ws.send(toBeSent);
+    } else {
+        console.log("Could not send message - No websocket")
+    }
+}
+
+export async function sendDisconnect(ws : WebSocket) {
+    const subMsg = MmtpMessage.create({
+        msgType: MsgType.PROTOCOL_MESSAGE,
+        uuid: uuidv4(),
+        protocolMessage: ProtocolMessage.create({
+            protocolMsgType: ProtocolMessageType.DISCONNECT_MESSAGE,
+            disconnectMessage: Disconnect.create({})
         })
     });
     const toBeSent = MmtpMessage.encode(subMsg).finish();

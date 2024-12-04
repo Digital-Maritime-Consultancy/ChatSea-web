@@ -43,7 +43,7 @@ const Configuration = () => {
 
   return (
     <Main pad="large">
-      <Heading>Configuration</Heading>
+      <Heading>Connection Configuration</Heading>
       <Box>
         <Heading level={3}>Select MMS Edge router</Heading>
         <Select

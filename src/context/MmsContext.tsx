@@ -3,7 +3,7 @@ import useWs from '../hooks/useWs';
 import {Certificate} from "pkijs";
 import {
   getConnectMsg,
-  sendDirectMsg,
+  sendDirectMsg, sendDisconnect,
   sendMsg,
   sendMsgReceive,
   sendSubjectMsg,
@@ -75,8 +75,6 @@ export const MmsProvider: React.FC<{children: React.ReactNode }> = ({ children }
 
     if (connected) {
       handleSubSetup(); // Call the async wrapper
-    } else {
-      console.error("Cannot subscribe when no MMTP connection exists");
     }
   }, [connected]);
 
@@ -187,8 +185,18 @@ export const MmsProvider: React.FC<{children: React.ReactNode }> = ({ children }
   }
 
   // MMS-specific disconnect method
-  const disconnect = () => {
-    disconnectWs(); // Close WebSocket connection
+  const disconnect = async () => {
+    console.log("Call DIsconnect")
+    let ws = getWs()
+    if (ws) {
+      await sendDisconnect(ws) //Properly await the MMTP disconnect before terminating the websocket
+      setConnected(false)
+      disconnectWs()
+      console.log("Websocket disconnected")
+    } else {
+      console.error("Could not terminate MMTP - No Websocket")
+    }
+    //disconnectWs(); // Close WebSocket connection
     setConnected(false); // Update MMS connection state
   };
 
