@@ -165,11 +165,7 @@ export const MmsProvider: React.FC<{children: React.ReactNode }> = ({ children }
   const sendSubject = async (subj : string, body : Uint8Array) => {
     console.log("send subject", subj);
     let ws = getWs()
-    console.log("ws is", ws)
-    console.log("sk is", signingKey)
-    console.log("wsConnected is", wsIsConnected)
     if (wsIsConnected && signingKey && ws) {
-      console.log("OK")
       await sendSubjectMsg(subj, body, signingKey, ws, mrn)
       console.log("SubjectCast Msg sent")
     } else {

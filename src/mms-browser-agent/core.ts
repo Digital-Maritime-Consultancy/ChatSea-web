@@ -16,12 +16,6 @@ import {bufToBigint} from "bigint-conversion";
 import {SmmpHeader, SmmpMessage} from "../mms/smmp";
 import { CertBundle } from "../models/certBundle";
 
-let state: { ws?: WebSocket; privateKey?: CryptoKey, ownMrn?: string } = {};
-
-export const initLegacyDependencies = (deps: typeof state) => {
-    state = deps;
-};
-
 
 interface ServiceProvider {
     mrn: string,
@@ -218,7 +212,7 @@ export async function sendSubjectMsg(subj : string, body : Uint8Array, signingKe
     });
 
     if (signingKey) {
-        let signedSendMsg = await signMessage(sendMsg, true, signingKey)
+        let signedSendMsg = await signMessage(mrn, sendMsg, true, signingKey)
         console.log(signedSendMsg)
 
         const toBeSent = MmtpMessage.encode(signedSendMsg).finish();
@@ -260,7 +254,7 @@ export async function sendDirectMsg(body : Uint8Array, receiver : string, signin
     });
 
     if (signingKey) {
-        let signedSendMsg = await signMessage(sendMsg, false,signingKey)
+        let signedSendMsg = await signMessage(mrn, sendMsg, false,signingKey)
         const toBeSent = MmtpMessage.encode(signedSendMsg).finish();
         if (ws) {
             ws.send(toBeSent);
@@ -411,7 +405,7 @@ export function getSmmpMessage(flags : FlagsEnum[], blcNum : number, totalBlcs :
 }
 
 
-export async function signMessage(msg : MmtpMessage, subject : boolean, signKey : CryptoKey) {
+export async function signMessage(mrn : string, msg : MmtpMessage, subject : boolean, signKey : CryptoKey) {
     const appMsgHeader = msg.protocolMessage!.sendMessage!.applicationMessage!.header!
     const appMsg = msg.protocolMessage!.sendMessage!.applicationMessage!
 
@@ -426,7 +420,7 @@ export async function signMessage(msg : MmtpMessage, subject : boolean, signKey 
 
     // @ts-ignore
     uint8Arrays.push(encoder.encode(appMsgHeader.expires.toString()));
-    uint8Arrays.push(encoder.encode(state.ownMrn));
+    uint8Arrays.push(encoder.encode(mrn));
     uint8Arrays.push(encoder.encode(appMsg.body!.length.toString()));
     uint8Arrays.push(appMsg.body!);
 

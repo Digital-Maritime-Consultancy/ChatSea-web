@@ -1,8 +1,5 @@
 import React, {useEffect, useState} from "react";
 import { Box, Button, Heading, TextInput, Select, TextArea, RadioButtonGroup, FileInput } from "grommet";
-import {useConnectionState} from "../context/ConnectContext";
-import {sendDirectMsg, sendSubjectMsg} from "../mms-browser-agent/core";
-import {useInjectDependencies} from "../mms-browser-agent/injectDependencies";
 import {useMsgState, useMsgStateDispatch} from "../context/MessageContext";
 import { getS100FileName, isS100File } from "../util/S100FileUtil";
 import { useMmsContext } from '../context/MmsContext';
@@ -21,7 +18,6 @@ const Chat = () => {
   const {connected, signingKey, sendDirect, sendSubject} = useMmsContext();
 
 
-  useInjectDependencies();
 
   useEffect(() => {
   }, [useMmsContext()]); //Do something whenever ConnetioNState updates
