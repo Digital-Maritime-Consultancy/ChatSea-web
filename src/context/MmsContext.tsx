@@ -192,7 +192,6 @@ export const MmsProvider: React.FC<{children: React.ReactNode }> = ({ children }
     } else {
       console.error("Could not terminate MMTP - No Websocket")
     }
-    //disconnectWs(); // Close WebSocket connection
     setConnected(false); // Update MMS connection state
   };
 
