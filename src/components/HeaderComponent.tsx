@@ -75,7 +75,7 @@ function HeaderComponent() {
               <Button hoverIndicator onClick={() => navigate("/connect")} >Connect</Button>
             </>
           )}
-          <Menu label="Account" items={[{ label: 'Disconnect from MMS', onClick: () => callDisconnect() }, { label: 'Log out', onClick: () => keycloak?.logout() }]} />
+          <Menu label="Account" items={[{ label: 'Disconnect from MMS', onClick: () => callDisconnect() }, { label: 'Log out', onClick: () => keycloak?.logout({redirectUri: "/"}) }]} />
         </>)}
     </Header>
   );
