@@ -12,6 +12,7 @@ import React, {
     authenticated: boolean
     mrn: string,
     username: string,
+    token: string,
   }
   
   const KeycloakContext = createContext<KeycloakContextProps | undefined>(
@@ -29,6 +30,7 @@ import React, {
     const [authenticated, setAuthenticated] = useState<boolean>(false);
     const [mrn, setMrn] = useState<string>("");
     const [username, setUsername] = useState<string>("");
+    const [token, setToken] = useState<string>("");
 
   
     useEffect(() => {
@@ -79,6 +81,7 @@ import React, {
             setKeycloak(keycloakInstance)
             setMrn(keycloakInstance.tokenParsed?.mrn);
             setUsername(keycloakInstance.tokenParsed?.name);
+            setToken(keycloakInstance.token!);
           })
       }
   
@@ -86,7 +89,7 @@ import React, {
     }, [])
   
     return (
-      <KeycloakContext.Provider value={{ keycloak, authenticated, mrn, username }}>
+      <KeycloakContext.Provider value={{ keycloak, authenticated, mrn, username, token }}>
         {children}
       </KeycloakContext.Provider>
     )

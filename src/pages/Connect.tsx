@@ -4,12 +4,14 @@ import { loadCertAndPrivateKeyFromFiles } from "../mms-browser-agent/core";
 import { Certificate } from "pkijs";
 import {useMmsContext} from "../context/MmsContext";
 import { useNavigate } from "react-router-dom";
+import useKeycloak from "../hooks/useKeycloak";
 
 const Configuration = () => {
   const [certFile, setCertFile] = useState<File | null>(null);
   const [privKeyFile, setPrivKeyFile] = useState<File | null>(null);
   const [wsUrl, setWsUrl] = useState<string>("");
   const {connect, connected} = useMmsContext();
+  const {authenticated, token} = useKeycloak();
   const navigate = useNavigate();
   const [show, setShow] = useState(false);
   const [downloadReady, setDownloadReady] = useState(false);
@@ -20,6 +22,12 @@ const Configuration = () => {
       navigate('/dashboard');
     }
   }, [connected]);
+
+  useEffect(() => {
+    if (authenticated) {
+      console.log(token);
+    }
+  }, [authenticated]);
 
   const readMrnFromCert = (cert: Certificate): string => {
     let ownMrn = "";
