@@ -3,8 +3,14 @@ import { Box, Button, Heading, TextInput, Select, TextArea, RadioButtonGroup, Fi
 import {useMsgState, useMsgStateDispatch} from "../context/MessageContext";
 import { getS100FileName, isS100File } from "../util/S100FileUtil";
 import { useMmsContext } from '../context/MmsContext';
+import { MyUserControllerApi } from "../backend-api/saas-management/apis/my-user-controller-api";
+import { Configuration, UserServiceUsageDto } from "../backend-api/saas-management";
+import { BASE_PATH } from "../backend-api/saas-management/base";
+import useKeycloak from "../hooks/useKeycloak";
+import { reportUsage } from "../util/saasAPICaller";
 
 const Chat = () => {
+  const { keycloak, token } = useKeycloak();
   const [receiverType, setReceiverType] = useState("");
   const [receiverMrn, setReceiverMrn] = useState("");
   const [message, setMessage] = useState("");
@@ -53,6 +59,9 @@ const Chat = () => {
     setMessage("")
     setMessagePlaceholder("Message Sent");
     setTimeout(() => setMessagePlaceholder("Write Message Here"), 3000); // Reset after 3 seconds
+    reportUsage(keycloak!, token, 6, 1).then((data) => {
+      console.log("Usage reported :" + data);
+    });
   };
 
   return (

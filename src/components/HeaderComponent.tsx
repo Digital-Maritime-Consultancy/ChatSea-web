@@ -5,29 +5,41 @@ import useKeycloak from "../hooks/useKeycloak";
 import { useMmsContext } from '../context/MmsContext';
 import { useServiceTopic } from "../context/ServiceTopicContext";
 import MMSStatus, { MMSConnStatus } from "./MMSStatus";
+import { Configuration, UserManagementControllerApi } from "../backend-api/saas-management";
+import { BASE_PATH } from "../backend-api/saas-management/base";
+import { fetchUserServiceSubscriptions } from "../util/saasAPICaller";
 
 function HeaderComponent() {
   const [background, setBackground] = useState("brand");
-  const { keycloak, authenticated } = useKeycloak();
+  const { keycloak, authenticated, orgMrn, mrn, token } = useKeycloak();
   const navigate = useNavigate();
   const {allowedServices, setAllowedServices, chosenService, setChosenService} = useServiceTopic();
-  const { connected, mrn, disconnect } = useMmsContext();
+  const { connected, mrn: mrnFromMMS, disconnect } = useMmsContext();
   const [mmsConnStatus, setMmsConnStatus] = useState<MMSConnStatus>(MMSConnStatus.NotConnected);
   useEffect(() => {
     if (authenticated) {
-      //console.log(keycloak?.tokenParsed);
+      fetchUserServiceSubscriptions(keycloak!, token, orgMrn, mrn).then((data) => {
+        // const services = data.map((service: any) => {
+        //   return {
+        //     name: service.serviceName,
+        //     value: service.serviceId,
+        //     link: `/service/${service.serviceId}`
+        //   }
+        // });
+        // setAllowedServices(services);
+      });
     }
     if (connected) {
       console.log("connected?", connected);
       setBackground("green");
-      console.log(mrn)
+      console.log(mrnFromMMS)
       setMmsConnStatus(MMSConnStatus.Connected);
     } else if (!connected && authenticated) {
       setBackground("brand");
     } else if (!connected) {
       setBackground("brand");
     }
-  }, [connected, authenticated, mrn]);
+  }, [connected, authenticated, mrnFromMMS]);
 
   const callDisconnect = () => {
     if (connected) {
@@ -39,7 +51,7 @@ function HeaderComponent() {
   }
   return (
     <Header background={background}>
-      <MMSStatus status={mmsConnStatus} mrn={mrn} />
+      <MMSStatus status={mmsConnStatus} mrn={mrnFromMMS} />
 
       {authenticated && (
         <>
