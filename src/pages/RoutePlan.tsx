@@ -1,10 +1,11 @@
 import { LatLngBoundsLiteral, LatLngExpression, LatLngTuple, Icon } from "leaflet";
 import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react";
 import { useMap, TileLayer, useMapEvents, MapContainer, Marker, Polygon, Polyline, Popup } from "react-leaflet";
-import { Footer, Text, Box, CheckBox } from 'grommet';
+import { Footer, Text, Box, CheckBox, Spinner } from 'grommet';
 import { parseS124, getMeanPosition } from "../util/s124Parser";
 import { requestARP } from "../util/arp";
 import S100Data from "../models/S100data";
+import FullScreenSpinner from "../components/FullScreenSpinner";
 
 export interface MapProp {
 }
@@ -28,7 +29,7 @@ const Flyer = ({ location }: FlyerProps) => {
     return <></>;
 };
 
-const lineOptions = { color: 'orange' }
+const lineOptions = { color: 'red' }
 const purpleOptions = { color: 'purple', fillColor: 'blue' }
 const markerIcon = new Icon({
     iconUrl: '/NavigatoinalWarningFeaturePart.svg', 
@@ -40,7 +41,7 @@ const markerIcon = new Icon({
 export const RoutePlan = forwardRef(({  }: MapProp, ref) => {
     // current location
     const [location, setLocation] = useState<LatLngTuple>([48.853534, 2.348099]);
-
+    const [isLoading, setIsLoading] = useState<boolean>(false);
     // S100 Sample
     const [data, setData] = useState<S100Data[]>([]);
 
@@ -130,11 +131,12 @@ export const RoutePlan = forwardRef(({  }: MapProp, ref) => {
                         });
                         setTempLocationMarkers({ ...tempLocationMarkers, end: clickedPoint });
                         setFooterMessage('Calculating route...');
-                            
+                        setIsLoading(true);
                         try {
                             const routeData = await requestARP(routeState.startPoint!, clickedPoint);
                             setRoutePolyline(routeData);
                             setFooterMessage('Route calculated');
+                            setIsLoading(false);
                         } catch (error) {
                             setFooterMessage('[!] Error calculating route : ' + error);
                         } finally {
@@ -145,6 +147,7 @@ export const RoutePlan = forwardRef(({  }: MapProp, ref) => {
                                 isSelectingDestination: false,
                                 isCalculating: false
                             });
+                            setIsLoading(false);
                         }
                     }
                 }
@@ -167,7 +170,7 @@ export const RoutePlan = forwardRef(({  }: MapProp, ref) => {
                 }}
             >
                 <CheckBox
-                    label={"Automatic Route Planning"}
+                    label={"Start Route Planning"}
                     checked={isRoutingEnabled}
                     onChange={() => {
                         if (!isRoutingEnabled) {
@@ -185,7 +188,9 @@ export const RoutePlan = forwardRef(({  }: MapProp, ref) => {
                     }}
                 />
             </Box>
-            
+            { isLoading &&
+                <FullScreenSpinner />
+            }
             {/* leaflet map */}
             <MapContainer
                 id="map"

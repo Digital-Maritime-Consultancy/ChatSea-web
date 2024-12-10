@@ -50,8 +50,8 @@ import React, {
             flow: 'standard',
             silentCheckSsoRedirectUri: window.location.origin + '/silent-check-sso.html',
           })
-          .then((authenticated: boolean) => {
-            setAuthenticated(authenticated);
+          .then(async (authenticated: boolean) => {
+            await setAuthenticated(authenticated);
             if (!authenticated) {
               navigate('/');
             } else {

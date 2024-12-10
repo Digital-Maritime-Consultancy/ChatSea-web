@@ -15,7 +15,7 @@ function HeaderComponent() {
   const [mmsConnStatus, setMmsConnStatus] = useState<MMSConnStatus>(MMSConnStatus.NotConnected);
   useEffect(() => {
     if (authenticated) {
-      console.log(keycloak?.tokenParsed);
+      //console.log(keycloak?.tokenParsed);
     }
     if (connected) {
       console.log("connected?", connected);
