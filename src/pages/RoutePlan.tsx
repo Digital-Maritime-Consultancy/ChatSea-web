@@ -40,7 +40,7 @@ const markerIcon = new Icon({
 
 export const RoutePlan = forwardRef(({  }: MapProp, ref) => {
     // current location
-    const [location, setLocation] = useState<LatLngTuple>([48.853534, 2.348099]);
+    const [location, setLocation] = useState<LatLngTuple>([34.922702, 128.567756]);
     const [isLoading, setIsLoading] = useState<boolean>(false);
     // S100 Sample
     const [data, setData] = useState<S100Data[]>([]);
