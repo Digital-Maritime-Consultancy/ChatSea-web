@@ -28,7 +28,7 @@ const Flyer = ({ location }: FlyerProps) => {
     return <></>;
 };
 
-const limeOptions = { color: 'lime' }
+const lineOptions = { color: 'orange' }
 const purpleOptions = { color: 'purple', fillColor: 'blue' }
 const markerIcon = new Icon({
     iconUrl: '/NavigatoinalWarningFeaturePart.svg', 
@@ -42,17 +42,7 @@ export const RoutePlan = forwardRef(({  }: MapProp, ref) => {
     const [location, setLocation] = useState<LatLngTuple>([48.853534, 2.348099]);
 
     // S100 Sample
-    const [data, setData] = useState<S100Data[]>([{
-        type: 'polygon',
-        marker: undefined, 
-        polygon: [[[51.515, -0.09],
-                [51.52, -0.1],
-                [51.52, -0.12],],
-                [[51.515, -0.09],
-                [25.52, -0.1],
-                [51.52, -0.4],]], 
-        title: 'S100 test area', 
-        message: 'simple test area'} as S100Data]);
+    const [data, setData] = useState<S100Data[]>([]);
 
     // ARP 관련
     const [isRoutingEnabled, setIsRoutingEnabled] = useState<boolean>(false);
@@ -262,7 +252,7 @@ export const RoutePlan = forwardRef(({  }: MapProp, ref) => {
                 {/* Draw ARP route */}
                 {routePolyline && (
                     <Polyline 
-                        pathOptions={limeOptions} 
+                        pathOptions={lineOptions} 
                         positions={routePolyline}
                     >
                     </Polyline>

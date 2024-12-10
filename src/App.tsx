@@ -15,6 +15,8 @@ import { KeycloakProvider } from './context/KeycloakContext';
 import { MmsProvider } from './context/MmsContext';
 import RoutePlan from './pages/RoutePlan';
 import Connect from './pages/Connect';
+import { ServiceTopic } from './models/serviceTopic';
+import { ServiceTopicProvider } from './context/ServiceTopicContext';
 
 function App() {
   
@@ -26,7 +28,7 @@ function App() {
           <ConnectionContextProvider>
             <MsgContextProvider>
               <MmsProvider>
-                  <div>
+                <ServiceTopicProvider>
                     <HeaderComponent />
                     <Routes>
                       <Route path="/" element={<Landing />} />
@@ -37,7 +39,7 @@ function App() {
                       <Route path="/connect" element={<Connect />} />
                       <Route path="/conf" element={<Configuration connect={() => {}} />} />
                     </Routes>
-                  </div>
+                  </ServiceTopicProvider>
               </MmsProvider>
           </MsgContextProvider>
           </ConnectionContextProvider>

@@ -3,12 +3,16 @@ import { Link, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import useKeycloak from "../hooks/useKeycloak";
 import { useMmsContext } from '../context/MmsContext';
+import { useServiceTopic } from "../context/ServiceTopicContext";
+import MMSStatus, { MMSConnStatus } from "./MMSStatus";
 
 function HeaderComponent() {
   const [background, setBackground] = useState("brand");
   const { keycloak, authenticated } = useKeycloak();
   const navigate = useNavigate();
+  const {allowedServices, setAllowedServices, chosenService, setChosenService} = useServiceTopic();
   const { connected, mrn } = useMmsContext();
+  const [mmsConnStatus, setMmsConnStatus] = useState<MMSConnStatus>(MMSConnStatus.NotConnected);
   const [displayMrn, setDisplayMrn] = useState<string>()
   useEffect(() => {
     if (authenticated) {
@@ -19,6 +23,7 @@ function HeaderComponent() {
       setBackground("green");
       console.log(mrn)
       setDisplayMrn(`My Mrn: ${mrn}`);
+      setMmsConnStatus(MMSConnStatus.Connected);
     } else if (!connected && authenticated) {
       setBackground("red");
       setDisplayMrn("Connection lost");
@@ -30,24 +35,34 @@ function HeaderComponent() {
 
   return (
     <Header background={background}>
+      <MMSStatus status={mmsConnStatus} />
       {/* Indented and styled displayMrn */}
       <span style={{ marginLeft: "1rem", fontWeight: "bold" }}>{displayMrn}</span>
 
-      {connected && (
+      {authenticated && (
         <>
-          <Button hoverIndicator><Link to="/dashboard">Dashboard</Link></Button>
-          <Button hoverIndicator><Link to="/s124">Navigational Warning</Link></Button>
-          <Button hoverIndicator><Link to="/routeplan">Route Planning</Link></Button>
-          <Button hoverIndicator><Link to="/chat">Chat</Link></Button>
-          <Button hoverIndicator><Link to="/conf">Configuration</Link></Button>
-        </>
-      )}
-      {!connected && (
-        <>
-          <Button hoverIndicator onClick={() => navigate("/")}>Home</Button>
-          <Button hoverIndicator onClick={() => navigate("/connect")}>Connect</Button>
-        </>
-      )}
+          {connected && (
+            <>
+                <Button hoverIndicator onClick={() => navigate("/dashboard")}>Dashboard</Button>
+                {allowedServices.map((service) => {
+                  if (chosenService.includes(service.name)) {
+                    return <Button key={service.value} hoverIndicator onClick={() => navigate(service.link)}>{service.name}</Button>
+                  }
+                })}
+                <Button hoverIndicator onClick={() => navigate("/conf")}>Configuration</Button>
+            </>
+          )}
+          {!connected && (
+            <>
+              <Button hoverIndicator onClick={() => navigate("/dashboard")}>Dashboard</Button>
+              {chosenService.includes("Route Planning") && allowedServices.filter((service) => service.value === "arp").map(
+                (service) => <Button key={service.value} hoverIndicator onClick={() => navigate(service.link)}>{service.name}</Button>
+              )}
+              <Button hoverIndicator onClick={() => navigate("/connect")} >Connect</Button>
+            </>
+          )}
+          <Menu label="Account" items={[{ label: 'logout', onClick: () => keycloak?.logout() }]} />
+        </>)}
 
       <Menu label="account" items={[{ label: 'logout', onClick: () => keycloak?.logout() }]} />
     </Header>

@@ -2,6 +2,9 @@ import { Box, Button, CheckBoxGroup, Heading, Main } from "grommet";
 import { Certificate } from "pkijs";
 import { useMmsContext } from '../context/MmsContext';
 import { useNavigate } from 'react-router-dom'
+import { useState } from "react";
+import { useServiceTopic } from "../context/ServiceTopicContext";
+import { ServiceInfo, ServiceTopic } from "../models/serviceTopic";
 
 export interface ConfigurationProp {
   connect: () => void;
@@ -10,6 +13,9 @@ export interface ConfigurationProp {
 const Configuration = ({ connect }: ConfigurationProp) => {
   const {disconnect} = useMmsContext();
   const navigate = useNavigate();
+  const {allowedServices, setAllowedServices, chosenService, setChosenService} = useServiceTopic();
+  
+  const serviceTopics = allowedServices.map((service) => service.name);
 
   const readMrnFromCert = (cert: Certificate): string => {
     let ownMrn = "";
@@ -37,7 +43,13 @@ const Configuration = ({ connect }: ConfigurationProp) => {
       <Box>
         <Heading level={3}>Select Service</Heading>
         <Box pad="medium">
-          <CheckBoxGroup options={["Navigational Warning", "Route Planning", "Chat", "Service Announcement"]} />
+        <CheckBoxGroup
+        value={chosenService}
+        onChange={(event: any) => {
+          setChosenService(event.value);
+        }}
+        options={serviceTopics}
+      />
         </Box>
       <Box pad={{ top: "medium" }}>
         <Button label="Save" primary onClick={handleSave} />

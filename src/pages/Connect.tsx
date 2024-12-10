@@ -44,8 +44,10 @@ const Configuration = () => {
         <Heading level={3}>Select MMS Edge router</Heading>
         <Select
           options={[
-            { label: "Korea Edge Router", value: "wss://kr-edgerouter.dmc.international:8888" },
-            { label: "EU Edge Router", value: "wss://eu-edgerouter.dmc.international:8888" },
+            { label: "NHN Korea Edgerouter", value: "wss://kr-er.aivn.kr:8888" },
+            { label: "NHN Japan Edgerouter", value: "wss://jp-er.aivn.kr:8888" },
+            // { label: "Korea Edge Router", value: "wss://kr-edgerouter.dmc.international:8888" },
+            // { label: "EU Edge Router", value: "wss://eu-edgerouter.dmc.international:8888" },
           ]}
           placeholder="Select MMS Edge Router"
           onChange={({ option }) => setWsUrl(option!.value as string)}

@@ -3,6 +3,7 @@ import { LatLngTuple } from "leaflet";
 import S100Data from "../models/S100data";
 
 export const parseS124 = async (xmlString: string): Promise<S100Data | null> => {
+  if (xmlString.length === 0) return null;
   try {
     const parser = new XMLParser({
       ignoreAttributes: false,
