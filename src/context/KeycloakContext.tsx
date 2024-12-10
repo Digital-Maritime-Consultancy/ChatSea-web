@@ -82,7 +82,6 @@ import React, {
             setKeycloak(keycloakInstance)
             setMrn(keycloakInstance.tokenParsed?.mrn);
             setUsername(keycloakInstance.tokenParsed?.name);
-            console.log(keycloakInstance.tokenParsed);
             setOrgMrn(keycloakInstance.tokenParsed?.org);
             setToken(keycloakInstance.token!);
           })

@@ -7,6 +7,7 @@ import { useServiceTopic } from "../context/ServiceTopicContext";
 import MMSStatus, { MMSConnStatus } from "./MMSStatus";
 import { Configuration, UserManagementControllerApi } from "../backend-api/saas-management";
 import { BASE_PATH } from "../backend-api/saas-management/base";
+import { fetchUserServiceSubscriptions } from "../util/saasAPICaller";
 
 function HeaderComponent() {
   const [background, setBackground] = useState("brand");
@@ -17,23 +18,16 @@ function HeaderComponent() {
   const [mmsConnStatus, setMmsConnStatus] = useState<MMSConnStatus>(MMSConnStatus.NotConnected);
   useEffect(() => {
     if (authenticated) {
-      const apiConfig: Configuration = {
-        basePath: BASE_PATH,
-        baseOptions: {
-            headers: {
-                'Authorization': `Bearer ${token}`,
-            },
-        },
-      };
-      const userController = new UserManagementControllerApi(apiConfig);
-
-      try {
-        userController.getUserServiceSubscriptions(orgMrn, mrn).then((response) => {
-          console.log(response.data);
-        });
-      } catch (error) {
-        console.error("Failed to fetch user service subscriptions:", error);
-      }
+      fetchUserServiceSubscriptions(keycloak!, token, orgMrn, mrn).then((data) => {
+        // const services = data.map((service: any) => {
+        //   return {
+        //     name: service.serviceName,
+        //     value: service.serviceId,
+        //     link: `/service/${service.serviceId}`
+        //   }
+        // });
+        // setAllowedServices(services);
+      });
     }
     if (connected) {
       console.log("connected?", connected);

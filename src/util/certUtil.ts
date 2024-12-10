@@ -30,12 +30,42 @@ export const issueNewWithLocalKeys = async (
         const csrBytes = csr.toSchema().toBER(false);
         const pemCsr = toPem(csrBytes, 'CERTIFICATE REQUEST');
 
-        const certificateText: string = await new Promise((resolve, reject) => {
-            certificateService.newUserCertFromCsr(pemCsr, orgMrn, mrn)
+        return await new Promise((resolve, reject) => {
+            certificateService.newUserCertFromCsr1(pemCsr, orgMrn, mrn)
                 .then(
-                    (cert: any) => {
+                    async (cert: any) => {
                         // Handle successful response, e.g., process the certificate if needed
+                        const certificateText: string = cert.data;
+                        const rawPrivateKey = await crypto.subtle.exportKey('pkcs8', keyPair.privateKey);
+                        const rawPublicKey = await crypto.subtle.exportKey('spki', keyPair.publicKey);
 
+                        const privateKey = new PrivateKeyInfo({ schema: fromBER(rawPrivateKey).result });
+                        if (generatePkcs12) {
+                            const rawCerts = convertCertChain(certificateText);
+                            const certs = rawCerts.map(cert => new Certificate({ schema: fromBER(cert).result }));
+                            const password = generatePassword();
+
+                            const pkcs12Keystore = await generatePKCS12(privateKey, certs, password);
+
+                            resolve({
+                                certificate: certificateText,
+                                publicKey: toPem(rawPublicKey, 'PUBLIC KEY'),
+                                privateKey: toPem(rawPrivateKey, 'PRIVATE KEY'),
+                                pkcs12Keystore,
+                                keystorePassword: password,
+                            } as CertificateBundle);
+                        } else {
+                            console.log({
+                                certificate: certificateText,
+                                publicKey: toPem(rawPublicKey, 'PUBLIC KEY'),
+                                privateKey: toPem(rawPrivateKey, 'PRIVATE KEY'),
+                            });
+                            resolve({
+                                certificate: certificateText,
+                                publicKey: toPem(rawPublicKey, 'PUBLIC KEY'),
+                                privateKey: toPem(rawPrivateKey, 'PRIVATE KEY'),
+                            } as CertificateBundle);
+                        }
                     },
                     (err: any) => {
                         console.log(err);
@@ -49,32 +79,6 @@ export const issueNewWithLocalKeys = async (
                     }
                 );
         });
-        const rawPrivateKey = await crypto.subtle.exportKey('pkcs8', keyPair.privateKey);
-        const rawPublicKey = await crypto.subtle.exportKey('spki', keyPair.publicKey);
-
-        const privateKey = new PrivateKeyInfo({ schema: fromBER(rawPrivateKey).result });
-
-        if (generatePkcs12) {
-            const rawCerts = convertCertChain(certificateText);
-            const certs = rawCerts.map(cert => new Certificate({ schema: fromBER(cert).result }));
-            const password = generatePassword();
-
-            const pkcs12Keystore = await generatePKCS12(privateKey, certs, password);
-
-            return {
-                certificate: certificateText,
-                publicKey: toPem(rawPublicKey, 'PUBLIC KEY'),
-                privateKey: toPem(rawPrivateKey, 'PRIVATE KEY'),
-                pkcs12Keystore,
-                keystorePassword: password,
-            };
-        } else {
-            return {
-                certificate: certificateText,
-                publicKey: toPem(rawPublicKey, 'PUBLIC KEY'),
-                privateKey: toPem(rawPrivateKey, 'PRIVATE KEY'),
-            };
-        }
     } catch (err) {
         console.error('Error while issuing new certificate:', err);
         return undefined;
