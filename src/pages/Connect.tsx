@@ -5,29 +5,28 @@ import { Certificate } from "pkijs";
 import {useMmsContext} from "../context/MmsContext";
 import { useNavigate } from "react-router-dom";
 import useKeycloak from "../hooks/useKeycloak";
+import { CertificateControllerApi, Configuration, UserControllerApi } from "../backend-api/identity-registry";
+import { BASE_PATH } from "../backend-api/identity-registry/base";
+import { downloadPemCertificate, issueNewWithLocalKeys } from "../util/certUtil";
+import { CertificateBundle } from "../util/certificateBundle";
 
-const Configuration = () => {
+const Connect = () => {
   const [certFile, setCertFile] = useState<File | null>(null);
   const [privKeyFile, setPrivKeyFile] = useState<File | null>(null);
   const [wsUrl, setWsUrl] = useState<string>("");
   const {connect, connected} = useMmsContext();
-  const {authenticated, token} = useKeycloak();
+  const {authenticated, token, mrn, orgMrn} = useKeycloak();
   const navigate = useNavigate();
   const [show, setShow] = useState(false);
   const [downloadReady, setDownloadReady] = useState(false);
   const [certUnitPrice, setCertUnitPrice] = useState(100);
+  const [certificateBundle, setCertificateBundle] = useState<CertificateBundle | undefined>(undefined);
 
   useEffect(() => {
     if (connected) {
       navigate('/dashboard');
     }
   }, [connected]);
-
-  useEffect(() => {
-    if (authenticated) {
-      console.log(token);
-    }
-  }, [authenticated]);
 
   const readMrnFromCert = (cert: Certificate): string => {
     let ownMrn = "";
@@ -41,11 +40,29 @@ const Configuration = () => {
   }
 
   const issueCert = () => {
+    if (!authenticated) {
+      alert("Please login to issue new certificate");
+    } else {
+      const apiConfig: Configuration = {
+        basePath: BASE_PATH,
+        baseOptions: {
+            headers: {
+                'Authorization': `Bearer ${token}`,
+            },
+        },
+    };
+      const userService = new UserControllerApi(apiConfig);
+      issueNewWithLocalKeys(userService, mrn, orgMrn, true).then((cert) => {
+        setCertificateBundle(cert);
+        console.log(cert);
+      });
+    }
+    
     setDownloadReady(true);
   }
 
   const downloadCert = () => {
-
+    downloadPemCertificate(certificateBundle!, mrn);
   }
 
   const handleConnect = () => {
@@ -83,7 +100,9 @@ const Configuration = () => {
         <FileInput name="certificate" onChange={({ target: { files } }) => setCertFile(files![0])} />
         <Heading level={3}>Select private key</Heading>
         <FileInput name="privateKey" onChange={({ target: { files } }) => setPrivKeyFile(files![0])} />
-        <Heading level={4}>Don't have certificate and private key?</Heading>
+        {
+          /*
+          <Heading level={4}>Don't have certificate and private key?</Heading>
         <Button label="Click here to issue new certificate and private key" secondary onClick={() => setShow(true)}/>
         {show && (
         <Layer
@@ -111,6 +130,9 @@ const Configuration = () => {
           
         </Layer>
         )}
+          */
+        }
+        
       </Box>
       <Box pad={{ top: "medium" }}>
         <Button label="Connect" primary onClick={handleConnect} />
@@ -121,4 +143,4 @@ const Configuration = () => {
   );
 }
 
-export default Configuration;
+export default Connect;
