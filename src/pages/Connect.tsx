@@ -1,14 +1,22 @@
 import { Box, Button, FileInput, Heading, Main, Select } from "grommet";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { loadCertAndPrivateKeyFromFiles } from "../mms-browser-agent/core";
 import { Certificate } from "pkijs";
 import {useMmsContext} from "../context/MmsContext";
+import { useNavigate } from "react-router-dom";
 
 const Configuration = () => {
   const [certFile, setCertFile] = useState<File | null>(null);
   const [privKeyFile, setPrivKeyFile] = useState<File | null>(null);
   const [wsUrl, setWsUrl] = useState<string>("");
-  const {connect} = useMmsContext();
+  const {connect, connected} = useMmsContext();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (connected) {
+      navigate('/dashboard');
+    }
+  }, [connected]);
 
   const readMrnFromCert = (cert: Certificate): string => {
     let ownMrn = "";
@@ -39,7 +47,7 @@ const Configuration = () => {
 
   return (
     <Main pad="large">
-      <Heading>Connection Configuration</Heading>
+      <Heading>Connection to MMS Network</Heading>
       <Box>
         <Heading level={3}>Select MMS Edge router</Heading>
         <Select

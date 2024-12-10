@@ -13,7 +13,6 @@ function HeaderComponent() {
   const {allowedServices, setAllowedServices, chosenService, setChosenService} = useServiceTopic();
   const { connected, mrn } = useMmsContext();
   const [mmsConnStatus, setMmsConnStatus] = useState<MMSConnStatus>(MMSConnStatus.NotConnected);
-  const [displayMrn, setDisplayMrn] = useState<string>()
   useEffect(() => {
     if (authenticated) {
       console.log(keycloak?.tokenParsed);
@@ -22,22 +21,17 @@ function HeaderComponent() {
       console.log("connected?", connected);
       setBackground("green");
       console.log(mrn)
-      setDisplayMrn(`My Mrn: ${mrn}`);
       setMmsConnStatus(MMSConnStatus.Connected);
     } else if (!connected && authenticated) {
-      setBackground("red");
-      setDisplayMrn("Connection lost");
+      setBackground("brand");
     } else if (!connected) {
       setBackground("brand");
-      setDisplayMrn("");
     }
   }, [connected, authenticated, mrn]);
 
   return (
     <Header background={background}>
-      <MMSStatus status={mmsConnStatus} />
-      {/* Indented and styled displayMrn */}
-      <span style={{ marginLeft: "1rem", fontWeight: "bold" }}>{displayMrn}</span>
+      <MMSStatus status={mmsConnStatus} mrn={mrn} />
 
       {authenticated && (
         <>
@@ -63,8 +57,6 @@ function HeaderComponent() {
           )}
           <Menu label="Account" items={[{ label: 'logout', onClick: () => keycloak?.logout() }]} />
         </>)}
-
-      <Menu label="account" items={[{ label: 'logout', onClick: () => keycloak?.logout() }]} />
     </Header>
   );
 }
