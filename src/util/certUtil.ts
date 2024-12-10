@@ -3,9 +3,9 @@ import { Attribute, AttributeTypeAndValue, AuthenticatedSafe, CertBag, Certifica
 import { Convert } from "pvtsutils";
 import { stringToArrayBuffer } from 'pvutils';
 import { CertificateBundle } from "./certificateBundle";
-import { UserControllerApi } from "../backend-api/identity-registry";
 import JSZip from "jszip";
 import * as fileSaver from 'file-saver';
+import { UserControllerApi } from "../backend-api/identity-registry/apis/user-controller-api";
 
 export const issueNewWithLocalKeys = async (
     certificateService: UserControllerApi,
@@ -33,11 +33,11 @@ export const issueNewWithLocalKeys = async (
         const certificateText: string = await new Promise((resolve, reject) => {
             certificateService.newUserCertFromCsr(pemCsr, orgMrn, mrn)
                 .then(
-                    (cert) => {
+                    (cert: any) => {
                         // Handle successful response, e.g., process the certificate if needed
 
                     },
-                    err => {
+                    (err: any) => {
                         console.log(err);
                         // Successful response but failure in PEM fitting to JSON format
                         if (err.status === 201) {

@@ -6,6 +6,9 @@ import { parseS124, getMeanPosition } from "../util/s124Parser";
 import { requestARP } from "../util/arp";
 import S100Data from "../models/S100data";
 import FullScreenSpinner from "../components/FullScreenSpinner";
+import { Configuration, MyUserControllerApi, UserServiceUsageDto } from "../backend-api/saas-management";
+import { BASE_PATH } from "../backend-api/saas-management/base";
+import useKeycloak from "../hooks/useKeycloak";
 
 export interface MapProp {
 }
@@ -39,6 +42,21 @@ const markerIcon = new Icon({
 });
 
 export const RoutePlan = forwardRef(({  }: MapProp, ref) => {
+    const { authenticated, token, mrn, orgMrn } = useKeycloak();
+    const [ myService, setMyService ] = useState<MyUserControllerApi | undefined>(undefined);
+    useEffect(() => {
+        if (!authenticated) return;
+        const apiConfig: Configuration = {
+            basePath: BASE_PATH,
+            baseOptions: {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                },
+            },
+        };
+        const userService = new MyUserControllerApi(apiConfig);
+        setMyService(userService);
+    }, [authenticated]);
     // current location
     const [location, setLocation] = useState<LatLngTuple>([34.922702, 128.567756]);
     const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -137,6 +155,17 @@ export const RoutePlan = forwardRef(({  }: MapProp, ref) => {
                             setRoutePolyline(routeData);
                             setFooterMessage('Route calculated');
                             setIsLoading(false);
+                            // const apiConfig: Configuration = {
+                            //     basePath: BASE_PATH,
+                            //     baseOptions: {
+                            //         headers: {
+                            //             'Authorization': `Bearer ${token}`,
+                            //         },
+                            //     },
+                            // };
+                            // const userService = new MyUserControllerApi(apiConfig);
+                            // userService.registerServiceUsage({serviceId: 7, usageAmount: 1} as UserServiceUsageDto);
+
                         } catch (error) {
                             setFooterMessage('[!] Error calculating route : ' + error);
                         } finally {

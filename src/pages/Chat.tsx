@@ -3,8 +3,13 @@ import { Box, Button, Heading, TextInput, Select, TextArea, RadioButtonGroup, Fi
 import {useMsgState, useMsgStateDispatch} from "../context/MessageContext";
 import { getS100FileName, isS100File } from "../util/S100FileUtil";
 import { useMmsContext } from '../context/MmsContext';
+import { MyUserControllerApi } from "../backend-api/saas-management/apis/my-user-controller-api";
+import { Configuration, UserServiceUsageDto } from "../backend-api/saas-management";
+import { BASE_PATH } from "../backend-api/saas-management/base";
+import useKeycloak from "../hooks/useKeycloak";
 
 const Chat = () => {
+  const {token} = useKeycloak();
   const [receiverType, setReceiverType] = useState("");
   const [receiverMrn, setReceiverMrn] = useState("");
   const [message, setMessage] = useState("");
@@ -53,6 +58,16 @@ const Chat = () => {
     setMessage("")
     setMessagePlaceholder("Message Sent");
     setTimeout(() => setMessagePlaceholder("Write Message Here"), 3000); // Reset after 3 seconds
+    const apiConfig: Configuration = {
+        basePath: BASE_PATH,
+        baseOptions: {
+            headers: {
+                'Authorization': `Bearer ${token}`,
+            },
+        },
+    };
+    const userService = new MyUserControllerApi(apiConfig);
+    userService.registerServiceUsage({serviceId: 6, usageAmount: 1} as UserServiceUsageDto);
   };
 
   return (

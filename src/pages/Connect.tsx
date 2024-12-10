@@ -5,10 +5,11 @@ import { Certificate } from "pkijs";
 import {useMmsContext} from "../context/MmsContext";
 import { useNavigate } from "react-router-dom";
 import useKeycloak from "../hooks/useKeycloak";
-import { CertificateControllerApi, Configuration, UserControllerApi } from "../backend-api/identity-registry";
+import { Configuration } from "../backend-api/identity-registry";
 import { BASE_PATH } from "../backend-api/identity-registry/base";
 import { downloadPemCertificate, issueNewWithLocalKeys } from "../util/certUtil";
 import { CertificateBundle } from "../util/certificateBundle";
+import { UserControllerApi } from "../backend-api/identity-registry/apis/user-controller-api";
 
 const Connect = () => {
   const [certFile, setCertFile] = useState<File | null>(null);
