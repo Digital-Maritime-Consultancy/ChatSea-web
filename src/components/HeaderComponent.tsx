@@ -11,7 +11,7 @@ function HeaderComponent() {
   const { keycloak, authenticated } = useKeycloak();
   const navigate = useNavigate();
   const {allowedServices, setAllowedServices, chosenService, setChosenService} = useServiceTopic();
-  const { connected, mrn } = useMmsContext();
+  const { connected, mrn, disconnect } = useMmsContext();
   const [mmsConnStatus, setMmsConnStatus] = useState<MMSConnStatus>(MMSConnStatus.NotConnected);
   useEffect(() => {
     if (authenticated) {
@@ -29,6 +29,14 @@ function HeaderComponent() {
     }
   }, [connected, authenticated, mrn]);
 
+  const callDisconnect = () => {
+    if (connected) {
+      disconnect();
+    } else {
+      alert("You are not connected to MMS");
+    }
+    
+  }
   return (
     <Header background={background}>
       <MMSStatus status={mmsConnStatus} mrn={mrn} />
@@ -55,7 +63,7 @@ function HeaderComponent() {
               <Button hoverIndicator onClick={() => navigate("/connect")} >Connect</Button>
             </>
           )}
-          <Menu label="Account" items={[{ label: 'logout', onClick: () => keycloak?.logout() }]} />
+          <Menu label="Account" items={[{ label: 'Disconnect from MMS', onClick: () => callDisconnect() }, { label: 'Log out', onClick: () => keycloak?.logout() }]} />
         </>)}
     </Header>
   );
