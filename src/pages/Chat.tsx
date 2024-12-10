@@ -1,31 +1,26 @@
 import React, {useEffect, useState} from "react";
 import { Box, Button, Heading, TextInput, Select, TextArea, RadioButtonGroup, FileInput } from "grommet";
-import {useConnectionState} from "../context/ConnectContext";
-import {sendDirectMsg, sendSubjectMsg} from "../mms-browser-agent/core";
-import {useInjectDependencies} from "../mms-browser-agent/injectDependencies";
 import {useMsgState, useMsgStateDispatch} from "../context/MessageContext";
 import { getS100FileName, isS100File } from "../util/S100FileUtil";
+import { useMmsContext } from '../context/MmsContext';
 
 const Chat = () => {
   const [receiverType, setReceiverType] = useState("");
   const [receiverMrn, setReceiverMrn] = useState("");
-  const [ws, setWs] = useState<WebSocket | undefined>(undefined);
   const [message, setMessage] = useState("");
   const [file, setFile] = useState<File | null>(null);
-  const connectionState = useConnectionState();
   const msgState = useMsgState();
   const [selectedSubject, setSelectedSubject] = useState("");
   const [receivedMessages, setReceivedMessages] = useState<string[]>([]);
   const mrnPlaceholder = "urn:mrn:mcp:device:mcc:core:abc"
   const [messagePlaceholder, setMessagePlaceholder] = useState("Write Message Here"); // State for placeholder
   const [sendBtnPlaceholder, setSendBtnPlaceholder] = useState("Send"); // State for placeholder
+  const {connected, signingKey, sendDirect, sendSubject} = useMmsContext();
 
 
-  useInjectDependencies();
 
   useEffect(() => {
-      setWs(connectionState.ws)
-  }, [connectionState]); //Do something whenever ConnetioNState updates
+  }, [useMmsContext()]); //Do something whenever ConnetioNState updates
 
   useEffect(() => {
     if (msgState && msgState.senderMrn && msgState.mmtpMsgData.length > 0) {
@@ -51,9 +46,9 @@ const Chat = () => {
   const handleSendClick = async () => {
     const encoder = new TextEncoder();
     if (receiverType == "subject") {
-      await sendSubjectMsg(selectedSubject, encoder.encode(message))
+      sendSubject(selectedSubject, encoder.encode(message))
     } else if (receiverType == "mrn") {
-      await sendDirectMsg(selectedSubject, encoder.encode(message), receiverMrn)
+      sendDirect(receiverMrn, encoder.encode(message))
     }
     setMessage("")
     setMessagePlaceholder("Message Sent");
@@ -96,7 +91,7 @@ const Chat = () => {
       */}
 
       {/* Send Message - renders only if we have a connection, should be only if auth*/}
-      {connectionState.connected && (
+      {connected && (
         <Box pad={{ top: "medium" }}>
           <RadioButtonGroup
             name="receiverType"

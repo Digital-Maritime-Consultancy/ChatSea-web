@@ -1,34 +1,41 @@
-import { Box, Button, Header, Menu } from "grommet";
+import { Button, Header, Menu } from "grommet";
 import { Link, useNavigate } from "react-router-dom";
-import { useConnectionState } from "../context/ConnectContext";
 import { useEffect, useState } from "react";
 import useKeycloak from "../hooks/useKeycloak";
-import MMSStatus, { Status } from "./MMSStatus";
+import { useMmsContext } from '../context/MmsContext';
 import { useServiceTopic } from "../context/ServiceTopicContext";
-
+import MMSStatus, { MMSConnStatus } from "./MMSStatus";
 
 function HeaderComponent() {
-  const connectionState = useConnectionState();
   const [background, setBackground] = useState("brand");
-  const [mmsConnStatus, setMmsConnStatus] = useState(Status.NotConnected);
   const { keycloak, authenticated } = useKeycloak();
-  const {allowedServices, setAllowedServices, chosenService, setChosenService} = useServiceTopic();
   const navigate = useNavigate();
+  const {allowedServices, setAllowedServices, chosenService, setChosenService} = useServiceTopic();
+  const { connected, mrn } = useMmsContext();
+  const [mmsConnStatus, setMmsConnStatus] = useState<MMSConnStatus>(MMSConnStatus.NotConnected);
   useEffect(() => {
-    if (connectionState.connected) {
-      setMmsConnStatus(Status.Connected);
+    if (authenticated) {
+      console.log(keycloak?.tokenParsed);
     }
-  }, [connectionState, authenticated]);
-  useEffect(() => {
-    console.log("Allowed services: ", allowedServices);
-    console.log("Chosen services: ", chosenService);
-  }, [authenticated]);
+    if (connected) {
+      console.log("connected?", connected);
+      setBackground("green");
+      console.log(mrn)
+      setMmsConnStatus(MMSConnStatus.Connected);
+    } else if (!connected && authenticated) {
+      setBackground("brand");
+    } else if (!connected) {
+      setBackground("brand");
+    }
+  }, [connected, authenticated, mrn]);
+
   return (
     <Header background={background}>
-      <MMSStatus status={mmsConnStatus} />
+      <MMSStatus status={mmsConnStatus} mrn={mrn} />
+
       {authenticated && (
         <>
-          {connectionState.connected && (
+          {connected && (
             <>
                 <Button hoverIndicator onClick={() => navigate("/dashboard")}>Dashboard</Button>
                 {allowedServices.map((service) => {
@@ -39,7 +46,7 @@ function HeaderComponent() {
                 <Button hoverIndicator onClick={() => navigate("/conf")}>Configuration</Button>
             </>
           )}
-          {!connectionState.connected && (
+          {!connected && (
             <>
               <Button hoverIndicator onClick={() => navigate("/dashboard")}>Dashboard</Button>
               {chosenService.includes("Route Planning") && allowedServices.filter((service) => service.value === "arp").map(

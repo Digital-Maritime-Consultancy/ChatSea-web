@@ -1,19 +1,22 @@
-import { Box, Button, FileInput, Heading, Main, Paragraph, Select } from "grommet";
-import { useContext, useState } from "react";
-import { useConnectionState, useConnectionStateDispatch } from "../context/ConnectContext";
+import { Box, Button, FileInput, Heading, Main, Select } from "grommet";
+import { useEffect, useState } from "react";
 import { loadCertAndPrivateKeyFromFiles } from "../mms-browser-agent/core";
 import { Certificate } from "pkijs";
+import {useMmsContext} from "../context/MmsContext";
+import { useNavigate } from "react-router-dom";
 
-export interface ConfigurationProp {
-  connect: () => void;
-}
-
-const Configuration = ({ connect }: ConfigurationProp) => {
-  const connectionState = useConnectionState();
-  const setConnectionState = useConnectionStateDispatch();
+const Configuration = () => {
   const [certFile, setCertFile] = useState<File | null>(null);
   const [privKeyFile, setPrivKeyFile] = useState<File | null>(null);
   const [wsUrl, setWsUrl] = useState<string>("");
+  const {connect, connected} = useMmsContext();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (connected) {
+      navigate('/dashboard');
+    }
+  }, [connected]);
 
   const readMrnFromCert = (cert: Certificate): string => {
     let ownMrn = "";
@@ -37,22 +40,14 @@ const Configuration = ({ connect }: ConfigurationProp) => {
     }
     loadCertAndPrivateKeyFromFiles(certFile, privKeyFile).then(async (certBundle) => {
       const mrn = readMrnFromCert(certBundle.certificate);
-      await setConnectionState({
-        ...connectionState,
-        certificate: certBundle.certificate,
-        privateKey: certBundle.privateKey,
-        privateKeyEcdh: certBundle.privateKeyEcdh,
-        wsUrl: wsUrl,
-        mrn: mrn,
-        ws: undefined,
-      });
+      connect(wsUrl, certBundle.privateKey, certBundle.certificate, mrn)
     });
     console.log("Config done")
   };
 
   return (
     <Main pad="large">
-      <Heading>Configuration</Heading>
+      <Heading>Connection to MMS Network</Heading>
       <Box>
         <Heading level={3}>Select MMS Edge router</Heading>
         <Select

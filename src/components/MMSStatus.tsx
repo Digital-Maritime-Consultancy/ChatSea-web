@@ -3,14 +3,14 @@ import { Box, Text, Tip } from 'grommet';
 import { CircleInformation } from 'grommet-icons';
 
 // Define the possible statuses and colors
-export enum Status {
+export enum MMSConnStatus {
     NotConnected = 'notConnected',
     Unauthenticated = 'unauthenticated',
     Connected = 'connected',
     Problem = 'problem',
 }
 
-const statusColors: Record<Status, string> = {
+const statusColors: Record<MMSConnStatus, string> = {
   notConnected: 'gray',
   unauthenticated: 'yellow',
   connected: 'green',
@@ -19,10 +19,11 @@ const statusColors: Record<Status, string> = {
 
 // Define props for the component
 interface MMSStatusProps {
-  status: Status; // Required prop to specify the status
+  status: MMSConnStatus; // Required prop to specify the status
+  mrn: string; // Required prop to specify the MRN
 }
 
-const MMSStatus: React.FC<MMSStatusProps> = ({ status }) => {
+const MMSStatus: React.FC<MMSStatusProps> = ({ status, mrn }) => {
   const color = statusColors[status] || 'gray';
 
   return (
@@ -49,6 +50,9 @@ const MMSStatus: React.FC<MMSStatusProps> = ({ status }) => {
       {/* Text for MMS */}
       <Text size="medium" weight="bold" color="dark-2">
         MMS
+      </Text>
+      <Text size="small" weight="bold" color="dark-2">
+        {mrn}
       </Text>
 
       {/* Optional additional icon */}

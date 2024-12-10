@@ -1,40 +1,21 @@
 import {
     ApplicationMessage,
-    ApplicationMessageHeader,
+    ApplicationMessageHeader, Connect, Disconnect,
     IApplicationMessage,
     MmtpMessage,
     MsgType,
     ProtocolMessage,
     ProtocolMessageType,
     Receive,
-    Recipients,
-    Send,
+    Send, Subscribe,
 } from "../mms/mmtp";
 import {v4 as uuidv4} from "uuid";
 import {Certificate} from "pkijs";
 import {fromBER, Integer, Sequence} from "asn1js";
 import {bufToBigint} from "bigint-conversion";
-import {ISmmpHeader, SmmpHeader, SmmpMessage} from "../mms/smmp";
+import {SmmpHeader, SmmpMessage} from "../mms/smmp";
 import { CertBundle } from "../models/certBundle";
 
-let state: { ws?: WebSocket; privateKey?: CryptoKey, ownMrn?: string } = {};
-
-export const initLegacyDependencies = (deps: typeof state) => {
-    state = deps;
-};
-
-const SMMP_SEGMENTATION_THRESHOLD = 49 * 1024 //49 KiB
-const incomingArea = document.getElementById("incomingArea") as HTMLDivElement;
-
-//All SMMP relevant items
-const downloadReceivedBtn = document.getElementById("downloadReceived") as HTMLButtonElement;
-
-const greenCheckMark = "\u2705";
-
-interface Subject {
-    value: string,
-    name: string,
-}
 
 interface ServiceProvider {
     mrn: string,
@@ -47,9 +28,6 @@ interface Subscription {
 }
 
 const subscriptions: Map<string, Subscription> = new Map();
-
-let remoteClients = new Map<string, RemoteClient>();
-let segmentedMessages = new Map<string, SegmentedMessage>();
 
 
 export async function isSmmp(msg: IApplicationMessage): Promise<boolean> {
@@ -90,6 +68,7 @@ export async function verifySignatureOnMessage(msg: IApplicationMessage): Promis
         let uint8Arrays: Uint8Array[] = [];
         const textEncoder = new TextEncoder();
         uint8Arrays.push(textEncoder.encode(subject));
+        // @ts-ignore
         uint8Arrays.push(textEncoder.encode(msg.header!.expires.toString(10)));
         uint8Arrays.push(textEncoder.encode(msg.header!.sender!));
         uint8Arrays.push(textEncoder.encode(msg.header!.bodySizeNumBytes!.toString()));
@@ -125,8 +104,6 @@ export async function verifySignatureOnMessage(msg: IApplicationMessage): Promis
     }
     return {valid: false};
 }
-
-let certBytes: ArrayBuffer;
 
 /*
 Convert a string into an ArrayBuffer
@@ -210,7 +187,8 @@ function bytesToBase64(bytes: Uint8Array): string {
     return btoa(binString);
 }
 
-export async function sendSubjectMsg(subj : string, body : Uint8Array) {
+export async function sendSubjectMsg(subj : string, body : Uint8Array, signingKey : CryptoKey, ws : WebSocket, mrn : string) {
+
     // set expiration to be one hour from now
     const expires = new Date();
     expires.setTime(expires.getTime() + 3_600_000);
@@ -224,7 +202,7 @@ export async function sendSubjectMsg(subj : string, body : Uint8Array) {
                 applicationMessage: ApplicationMessage.create({
                     header: ApplicationMessageHeader.create({
                         expires: Math.floor(expires.getTime() / 1000),
-                        sender: state.ownMrn,
+                        sender: mrn,
                         bodySizeNumBytes: body.length,
                         subject: subj,
                     }),
@@ -234,11 +212,12 @@ export async function sendSubjectMsg(subj : string, body : Uint8Array) {
         })
     });
 
-    if (state.privateKey) {
-        let signedSendMsg = await signMessage(sendMsg, true, state.privateKey)
+    if (signingKey) {
+        let signedSendMsg = await signMessage(mrn, sendMsg, true, signingKey)
+
         const toBeSent = MmtpMessage.encode(signedSendMsg).finish();
-        if (state.ws) {
-            state.ws.send(toBeSent);
+        if (ws) {
+            ws.send(toBeSent);
         } else {
             console.log("Could not send message - No websocket")
         }
@@ -248,7 +227,7 @@ export async function sendSubjectMsg(subj : string, body : Uint8Array) {
 
 }
 
-export async function sendDirectMsg(subj : string, body : Uint8Array, receiver : string) {
+export async function sendDirectMsg(body : Uint8Array, receiver : string, signingKey : CryptoKey, ws : WebSocket, mrn : string) {
     // set expiration to be one hour from now
     const expires = new Date();
     expires.setTime(expires.getTime() + 3_600_000);
@@ -262,7 +241,7 @@ export async function sendDirectMsg(subj : string, body : Uint8Array, receiver :
                 applicationMessage: ApplicationMessage.create({
                     header: ApplicationMessageHeader.create({
                         expires: Math.floor(expires.getTime() / 1000),
-                        sender: state.ownMrn,
+                        sender: mrn,
                         bodySizeNumBytes: body.length,
                         recipients: {
                             recipients: [receiver]
@@ -274,11 +253,11 @@ export async function sendDirectMsg(subj : string, body : Uint8Array, receiver :
         })
     });
 
-    if (state.privateKey) {
-        let signedSendMsg = await signMessage(sendMsg, false, state.privateKey)
+    if (signingKey) {
+        let signedSendMsg = await signMessage(mrn, sendMsg, false,signingKey)
         const toBeSent = MmtpMessage.encode(signedSendMsg).finish();
-        if (state.ws) {
-            state.ws.send(toBeSent);
+        if (ws) {
+            ws.send(toBeSent);
         } else {
             console.log("Could not send message - No websocket")
         }
@@ -287,8 +266,18 @@ export async function sendDirectMsg(subj : string, body : Uint8Array, receiver :
     }
 }
 
+export async function sendMsg(msg : MmtpMessage, ws : WebSocket) {
+    const toBeSent = MmtpMessage.encode(msg).finish();
+    if (ws) {
+        ws.send(toBeSent);
+        console.log("MMTP msg sent")
+    } else {
+        console.error("Could not send message - No Websocket connection")
+    }
+}
 
-async function sendMsgReceive() {
+//Request to receive all pending messages from the edgerouter
+export async function sendMsgReceive(ws : WebSocket) {
     const receive = MmtpMessage.create({
         msgType: MsgType.PROTOCOL_MESSAGE,
         uuid: uuidv4(),
@@ -298,199 +287,68 @@ async function sendMsgReceive() {
         })
     });
     const toBeSent = MmtpMessage.encode(receive).finish();
-    console.log("Sent MMTP message: ", toBeSent);
-    if (state.ws) {
-        state.ws.send(toBeSent);
+    if (ws) {
+        ws.send(toBeSent);
     } else {
         console.log("Could not send message - No websocket")
     }
 }
 
-/*
-sendSmmpBtn.addEventListener("click", async () => {
-    const receiverMrn = receiverMrnSelect.options[receiverMrnSelect.selectedIndex].value;
-    const rc = remoteClients.get(receiverMrn)!;
-
-    //Get the images to be sent
-    let body: Uint8Array;
-    if (encodedFile) {
-        body = encodedFile;
-    } else {
-        const text = msgArea.value;
-        const encoder = new TextEncoder();
-        body = encoder.encode(text);
-    }
-    let flags : FlagsEnum[] = []
-    const smmpUuid = uuidv4()
-    const msgSegments = Math.ceil(body.length / SMMP_SEGMENTATION_THRESHOLD + 1)
-    console.log("MSG SEGMENTS: ", msgSegments)
-    for (let i = 0; i < msgSegments; i++) {
-        const segment = body.subarray(i*SMMP_SEGMENTATION_THRESHOLD, (i+1)*SMMP_SEGMENTATION_THRESHOLD) //Idx will be clamped
-        console.log("Total segments", msgSegments)
-        console.log("Cur segment", segment)
-        const cipherSegment = await encrypt(rc.symKey, segment)
-            const smmpMessage = getSmmpMessage(flags, i, msgSegments, smmpUuid, new Uint8Array(cipherSegment))
-            console.log(smmpMessage)
-            const smmpPayload = SmmpMessage.encode(smmpMessage).finish()
-            await sendSmmpMsg(smmpPayload)
-        }
-
-    setTimeout(() => {
-        sendSmmpBtn.textContent = 'Sent';
-        sendSmmpBtn.classList.remove('btn-warning');
-        sendSmmpBtn.classList.add('btn-success');
-        sendSmmpBtn.disabled = true;
-
-        // Reset button after 3 seconds
-        setTimeout(() => {
-            sendSmmpBtn.textContent = 'Send SMMP';
-            sendSmmpBtn.classList.remove('btn-success');
-            sendSmmpBtn.classList.add('btn-warning');
-            sendSmmpBtn.disabled = false;
-        }, 3000);
-    }, 500);
-});
-
-//Caller should pass the smmp payload as argument to this function
-async function sendSmmpMsg(body : Uint8Array) {
-    const dataPayload = appendMagicWord(body)
-    await sendMsg(dataPayload)
-}
-/*
-downloadReceivedBtn.addEventListener('click', async() => {
-    setTimeout(() => {
-        downloadReceivedBtn.textContent = 'Downloading...';
-        downloadReceivedBtn.classList.add('active')
-        downloadReceivedBtn.disabled = true;
-
-        // Reset button after 3 seconds
-        setTimeout(() => {
-            downloadReceivedBtn.textContent = 'Download';
-            downloadReceivedBtn.classList.remove('active');
-            downloadReceivedBtn.disabled = false;
-        }, 3000);
-    }, 500);
-})
-
-//If SMMP is established with receiver, the user can choose to send message as either MMTP or SMMP
-receiverMrnSelect.addEventListener("change", async () => {
-    if (mrnRadio.checked && remoteClients.has(receiverMrnSelect.options[receiverMrnSelect.selectedIndex].value)) {
-        sendBtn.style.width = "0.5";
-        sendBtn.textContent = "Send MMTP";
-        sendBtn.style.display = "inline-block";
-        sendSmmpBtn.style.width = "0.5";
-        sendSmmpBtn.hidden = false;
-        sendSmmpBtn.style.display = "inline-block";
-    } else {
-        sendBtn.style.width = "100vw";
-        sendSmmpBtn.hidden = true;
-        sendBtn.textContent = "Send"
-    }
-})
-
-smmpConnectBtn.addEventListener("click", async () => {
-    const rcClientMrn = document.getElementById("rcClientMrn") as HTMLInputElement
-    console.log(rcClientMrn.value)
-
-    setTimeout(() => {
-        smmpConnectBtn.textContent = 'Awaiting Remote Client...';
-        smmpConnectBtn.classList.add('active')
-        smmpConnectBtn.disabled = true;
-    }, 500);
-
-    let smmpMsg = getSmmpHandshakeMessage()
-    const smmpPayload = SmmpMessage.encode(smmpMsg).finish()
-    const finalPayload = appendMagicWord(smmpPayload)
-    let mmtpMsg = getMmtpSendMrnMsg(rcClientMrn.value, finalPayload)
-
-    let signedSendMsg = await signMessage(mmtpMsg, false)
-
-    const toBeSent = MmtpMessage.encode(signedSendMsg).finish();
-    console.log("MMTP message: ", signedSendMsg);
-    lastSentMessage = signedSendMsg;
-    ws.send(toBeSent);
-
-    //Button countdown
-    let count = 15
-    const countdownInterval = setInterval(() => {
-        smmpConnectBtn.textContent = `Awaiting Remote Client...${count}`;
-        count--;
-
-        // When the countdown reaches 0, stop the interval and update the button text
-        if (count< 0) {
-            clearInterval(countdownInterval);
-            smmpConnectBtn.textContent = 'No response received';
-            setTimeout(() => {
-                smmpConnectBtn.textContent = 'Connect SMMP';
-                smmpConnectBtn.classList.remove('active');
-                smmpConnectBtn.disabled = false;
-                ongoingSmmpHandshakes.delete(rcClientMrn.value)
-            }, 2000);
-        }
-    }, 1000); // 1000 milliseconds = 1 second
-    ongoingSmmpHandshakes.set(rcClientMrn.value, countdownInterval)
-
-    console.log("MSG SENT!")
-
-    msgArea.value = "";
-    encodedFile = undefined;
-    loadedState.style.display = 'none';
-    unloadedState.style.display = 'block';
-});
-
-
-//Message receive
-const receiveBtn = document.getElementById("receiveBtn") as HTMLButtonElement;
-receiveBtn.addEventListener("click", () => {
-    setTimeout(() => {
-        receiveBtn.textContent = 'Receiving...';
-        receiveBtn.classList.add('active');
-        receiveBtn.disabled = true;
-        setTimeout(() => {
-            receiveBtn.textContent = "Receive Messages";
-            receiveBtn.classList.remove('active');
-            receiveBtn.disabled = false;
-        }, 3000);
-    }, 500);
-    const receive = MmtpMessage.create({
+export async function sendSubOwnMrn(ownMrn : string, ws : WebSocket) {
+    const subMsg = MmtpMessage.create({
         msgType: MsgType.PROTOCOL_MESSAGE,
         uuid: uuidv4(),
         protocolMessage: ProtocolMessage.create({
-            protocolMsgType: ProtocolMessageType.RECEIVE_MESSAGE,
-            receiveMessage: Receive.create({})
+            protocolMsgType: ProtocolMessageType.SUBSCRIBE_MESSAGE,
+            subscribeMessage: Subscribe.create({
+                directMessages: true
+            })
         })
     });
-    const bytes = MmtpMessage.encode(receive).finish();
-    lastSentMessage = receive;
-    ws.send(bytes);
-});
-
-function encodeFile(fileName: string, data: Uint8Array): Uint8Array {
-    const fileNameArray = new TextEncoder().encode("FILE" + fileName + "FILE");
-    const mergedArray = new Uint8Array(fileNameArray.length + data.length);
-    mergedArray.set(fileNameArray);
-    mergedArray.set(data, fileNameArray.length);
-    return mergedArray;
-}
-
-const fileInput = document.getElementById('fileInput')!;
-fileInput.addEventListener("change", (event) => handleFiles(event), false);
-
-function handleFiles(event: Event) {
-    const input = event.target as HTMLInputElement;
-    const files = input.files!;
-    const file: File = files[0];
-    if (file) {
-        file.arrayBuffer().then(buff => {
-            let data = new Uint8Array(buff); // x is your uInt8Array
-            // perform all required operations with x here.
-            encodedFile = encodeFile(file.name, data);
-            loadedState.style.display = 'block';
-            unloadedState.style.display = 'none';
-        });
+    const toBeSent = MmtpMessage.encode(subMsg).finish();
+    if (ws) {
+        ws.send(toBeSent);
+    } else {
+        console.log("Could not send message - No websocket")
     }
 }
-*/
+
+export async function sendSubName(subjectName : string, ws : WebSocket) {
+    const subMsg = MmtpMessage.create({
+        msgType: MsgType.PROTOCOL_MESSAGE,
+        uuid: uuidv4(),
+        protocolMessage: ProtocolMessage.create({
+            protocolMsgType: ProtocolMessageType.SUBSCRIBE_MESSAGE,
+            subscribeMessage: Subscribe.create({
+                subject: subjectName
+            })
+        })
+    });
+    const toBeSent = MmtpMessage.encode(subMsg).finish();
+    if (ws) {
+        ws.send(toBeSent);
+    } else {
+        console.log("Could not send message - No websocket")
+    }
+}
+
+export async function sendDisconnect(ws : WebSocket) {
+    const subMsg = MmtpMessage.create({
+        msgType: MsgType.PROTOCOL_MESSAGE,
+        uuid: uuidv4(),
+        protocolMessage: ProtocolMessage.create({
+            protocolMsgType: ProtocolMessageType.DISCONNECT_MESSAGE,
+            disconnectMessage: Disconnect.create({})
+        })
+    });
+    const toBeSent = MmtpMessage.encode(subMsg).finish();
+    if (ws) {
+        ws.send(toBeSent);
+    } else {
+        console.log("Could not send message - No websocket")
+    }
+}
+
 //-------------Definition of SMMP guarantees---------------
 export enum FlagsEnum {
     Handshake = 1 << 0,         // H (bit value 1)
@@ -526,34 +384,6 @@ export function hasAnyFlag(val : number, flags : FlagsEnum[]) : boolean {
     return false
 }
 
-export function getMmtpSendMrnMsg(recipientMrn : string, body : Uint8Array) {
-    const expires = new Date();
-    expires.setTime(expires.getTime() + 3_600_000);
-
-    const sendMsg = MmtpMessage.create({
-        msgType: MsgType.PROTOCOL_MESSAGE,
-        uuid: uuidv4(),
-        protocolMessage: ProtocolMessage.create({
-            protocolMsgType: ProtocolMessageType.SEND_MESSAGE,
-            sendMessage: Send.create({
-                applicationMessage: ApplicationMessage.create({
-                    header: ApplicationMessageHeader.create({
-                        expires: Math.floor(expires.getTime() / 1000),
-                        sender: state.ownMrn,
-                        bodySizeNumBytes: body.length,
-                    }),
-                    body: body,
-                })
-            })
-        })
-    });
-    sendMsg.protocolMessage!.sendMessage!.applicationMessage!.header!.recipients = Recipients.create({
-        recipients: [recipientMrn]
-    });
-
-    return sendMsg
-}
-
 export function getSmmpMessage(flags : FlagsEnum[], blcNum : number, totalBlcs : number, smmpUuid : string, smmpData : Uint8Array) {
     let controlBits = setFlags(flags)
 
@@ -574,14 +404,11 @@ export function getSmmpMessage(flags : FlagsEnum[], blcNum : number, totalBlcs :
     })
 }
 
-function getSmmpHandshakeMessage() {
-    const flags : FlagsEnum[] = [FlagsEnum.Handshake, FlagsEnum.Confidentiality, FlagsEnum.DeliveryGuarantee]
-    //Get the signing certificate
-    return getSmmpMessage(flags, 0, 1, uuidv4(), new Uint8Array(certBytes))
-}
+
+export async function signMessage(mrn : string, msg : MmtpMessage, subject : boolean, signKey : CryptoKey) {
 
 
-export async function signMessage(msg : MmtpMessage, subject : boolean, signKey : CryptoKey) {
+
     const appMsgHeader = msg.protocolMessage!.sendMessage!.applicationMessage!.header!
     const appMsg = msg.protocolMessage!.sendMessage!.applicationMessage!
 
@@ -594,8 +421,9 @@ export async function signMessage(msg : MmtpMessage, subject : boolean, signKey 
         uint8Arrays.push(encoder.encode(appMsgHeader.recipients!.recipients![0]));
     }
 
+    // @ts-ignore
     uint8Arrays.push(encoder.encode(appMsgHeader.expires.toString()));
-    uint8Arrays.push(encoder.encode(state.ownMrn));
+    uint8Arrays.push(encoder.encode(mrn));
     uint8Arrays.push(encoder.encode(appMsg.body!.length.toString()));
     uint8Arrays.push(appMsg.body!);
 
@@ -719,83 +547,19 @@ export function appendMagicWord(smmpPayload : Uint8Array) : Uint8Array {
     return finalPayload
 }
 
-function showSmmpSessions(sessions : Map<string,RemoteClient>) {
-    const activeSmmpSessionsDiv = document.getElementById('activeSmmpSessions')!;
-    activeSmmpSessionsDiv.innerHTML = ''; // Clear existing images
-
-    if (sessions.size > 0) {
-        const ul = document.createElement('ul');
-        ul.classList.add('list-group');
-
-        sessions.forEach((rc, mrn) => {
-            const li = document.createElement('li');
-            li.classList.add('list-group-item', 'd-flex', 'justify-content-between', 'align-items-center');
-
-            // Create a div for the MRN span to keep it left-aligned
-            const mrnDiv = document.createElement('div');
-            const mrnSpan = document.createElement('span');
-            mrnSpan.textContent = `${mrn}`;
-            mrnDiv.appendChild(mrnSpan);
-            li.appendChild(mrnDiv);
-
-            // Create a div for the boolean values to keep th<em right-aligned
-            const boolDiv = document.createElement('div');
-            boolDiv.classList.add('d-flex', 'flex-grow-1', 'justify-content-end');
-
-            const confSpan = document.createElement('span');
-            confSpan.textContent = `C: ${rc.confidentiality}`;
-            confSpan.classList.add('mx-1')
-            boolDiv.appendChild(confSpan);
-
-            const deliverySpan = document.createElement('span');
-            deliverySpan.textContent = `D: ${rc.deliveryAck}`;
-            deliverySpan.classList.add('mx-1')
-            boolDiv.appendChild(deliverySpan);
-
-            const nonrepudiationSpan = document.createElement('span');
-            nonrepudiationSpan.textContent = `N: ${rc.nonRepudiation}`;
-            nonrepudiationSpan.classList.add('mx-1')
-            boolDiv.appendChild(nonrepudiationSpan);
-
-
-            li.appendChild(boolDiv);
-
-            const endDiv = document.createElement('div');
-            endDiv.classList.add('ml-auto');
-            const endSessionBtn = document.createElement('button');
-            endSessionBtn.classList.add('btn', 'btn-danger', 'btn-sm')
-            endSessionBtn.textContent = 'x'
-            endSessionBtn.addEventListener('click', async () => {
-                //TODO Send SMMP Close segment once defined in the protocol
-                remoteClients.delete(mrn)
-                endSessionBtn.disabled = true
-                endSessionBtn.classList.add('active')
-                setTimeout(() => {
-                   li.remove()
-                }, 2000);
-
+export function getConnectMsg(mrn : string ) {
+    // Create the connect message with the provided MRN
+    const connectMsg = MmtpMessage.create({
+        msgType: MsgType.PROTOCOL_MESSAGE,
+        uuid: uuidv4(),
+        protocolMessage: ProtocolMessage.create({
+            protocolMsgType: ProtocolMessageType.CONNECT_MESSAGE,
+            connectMessage: Connect.create({
+                ownMrn: mrn // Assign the given MRN
             })
+        })
+    });
 
-            endDiv.appendChild(endSessionBtn)
-
-            li.appendChild(endDiv)
-
-            // Append the list item to the list
-            ul.appendChild(li);
-        });
-        activeSmmpSessionsDiv.appendChild(ul);
-        activeSmmpSessionsDiv.hidden = false;
-    }
-}
-
-export async function handleSegmentedMessage(header : ISmmpHeader, plaintext : Uint8Array) {
-    //If no entry exists, create one
-    let segmentedMsg = segmentedMessages.get(header.uuid!);
-    if (!segmentedMsg) {
-        segmentedMsg = createSegmentedMessage(0, header.totalBlocks!, SMMP_SEGMENTATION_THRESHOLD)
-        segmentedMessages.set(header.uuid!, segmentedMsg)
-    }
-    segmentedMsg.receivedBlocks++
-    segmentedMsg.data.set(plaintext, header.blockNum! * SMMP_SEGMENTATION_THRESHOLD)
+    return connectMsg;
 }
 
