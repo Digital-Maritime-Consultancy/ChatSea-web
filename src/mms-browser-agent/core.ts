@@ -90,7 +90,7 @@ export async function verifySignatureOnMessage(msg: IApplicationMessage): Promis
         let uint8Arrays: Uint8Array[] = [];
         const textEncoder = new TextEncoder();
         uint8Arrays.push(textEncoder.encode(subject));
-        uint8Arrays.push(textEncoder.encode(msg.header!.expires.toString(10)));
+        uint8Arrays.push(textEncoder.encode(msg.header!.expires!.toString(10)));
         uint8Arrays.push(textEncoder.encode(msg.header!.sender!));
         uint8Arrays.push(textEncoder.encode(msg.header!.bodySizeNumBytes!.toString()));
         uint8Arrays.push(msg.body!);
@@ -278,9 +278,9 @@ export async function sendDirectMsg(subj : string, body : Uint8Array, receiver :
         let signedSendMsg = await signMessage(sendMsg, false, state.privateKey)
         const toBeSent = MmtpMessage.encode(signedSendMsg).finish();
         if (state.ws) {
-            state.ws.send(toBeSent);
-        } else {
-            console.log("Could not send message - No websocket")
+                state.ws.send(toBeSent);
+            } else {
+                console.log("Could not send message - No websocket")
         }
     } else {
         console.log("Could not send message - No signature key")
@@ -577,7 +577,7 @@ export function getSmmpMessage(flags : FlagsEnum[], blcNum : number, totalBlcs :
 function getSmmpHandshakeMessage() {
     const flags : FlagsEnum[] = [FlagsEnum.Handshake, FlagsEnum.Confidentiality, FlagsEnum.DeliveryGuarantee]
     //Get the signing certificate
-    return getSmmpMessage(flags, 0, 1, uuidv4(), new Uint8Array(certBytes))
+    return getSmmpMessage(flags, 0, 1, uuidv4(), new Uint8Array(certBytes!))
 }
 
 
@@ -594,7 +594,7 @@ export async function signMessage(msg : MmtpMessage, subject : boolean, signKey 
         uint8Arrays.push(encoder.encode(appMsgHeader.recipients!.recipients![0]));
     }
 
-    uint8Arrays.push(encoder.encode(appMsgHeader.expires.toString()));
+    uint8Arrays.push(encoder.encode(appMsgHeader.expires!.toString()));
     uint8Arrays.push(encoder.encode(state.ownMrn));
     uint8Arrays.push(encoder.encode(appMsg.body!.length.toString()));
     uint8Arrays.push(appMsg.body!);
