@@ -50,10 +50,19 @@ const Chat = () => {
 
   const handleSendClick = async () => {
     const encoder = new TextEncoder();
+    let body: Uint8Array;
+
+    if (file) {
+      const arrayBuffer = await file.arrayBuffer();
+      body = new Uint8Array(arrayBuffer);
+    } else {
+      body = encoder.encode(message);
+    }
+
     if (receiverType == "subject") {
-      await sendSubjectMsg(selectedSubject, encoder.encode(message))
+      await sendSubjectMsg(selectedSubject, body);
     } else if (receiverType == "mrn") {
-      await sendDirectMsg(selectedSubject, encoder.encode(message), receiverMrn)
+      await sendDirectMsg(selectedSubject, body, receiverMrn);
     }
     setMessage("")
     setMessagePlaceholder("Message Sent");
