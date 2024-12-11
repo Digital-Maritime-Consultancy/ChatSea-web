@@ -3,7 +3,7 @@ import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "re
 import { useMap, TileLayer, useMapEvents, MapContainer, Marker, Polygon, Polyline, Popup } from "react-leaflet";
 import { Footer, Text, Box, CheckBox } from 'grommet';
 import { parseS124, getMeanPosition } from "../util/s124Parser";
-import { requestARP } from "../util/arp";
+import { requestARP2 } from "../util/arp";
 import S100Data from "../models/S100data";
 
 export interface MapProp {
@@ -142,8 +142,8 @@ export const Map = forwardRef(({  }: MapProp, ref) => {
                         setFooterMessage('Calculating route...');
                             
                         try {
-                            const routeData = await requestARP(routeState.startPoint!, clickedPoint);
-                            setRoutePolyline(routeData);
+                            const routeData = await requestARP2(routeState.startPoint!, clickedPoint);
+                            setRoutePolyline(routeData.coordinates);
                             setFooterMessage('Route calculated');
                         } catch (error) {
                             setFooterMessage('[!] Error calculating route : ' + error);

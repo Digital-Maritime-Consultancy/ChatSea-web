@@ -44,8 +44,13 @@ const markerIcon = new Icon({
 export const RoutePlan = forwardRef(({  }: MapProp, ref) => {
     const { authenticated, token, mrn, orgMrn } = useKeycloak();
     const [ myService, setMyService ] = useState<MyUserControllerApi | undefined>(undefined);
+
+    console.log(token);
+
     useEffect(() => {
         if (!authenticated) return;
+
+
         const apiConfig: Configuration = {
             basePath: BASE_PATH,
             baseOptions: {
@@ -151,8 +156,8 @@ export const RoutePlan = forwardRef(({  }: MapProp, ref) => {
                         setFooterMessage('Calculating route...');
                         setIsLoading(true);
                         try {
-                            const routeData = await requestARP(routeState.startPoint!, clickedPoint);
-                            setRoutePolyline(routeData);
+                            const routeData = await requestARP(routeState.startPoint!, clickedPoint, token);
+                            setRoutePolyline(routeData.coordinates);
                             setFooterMessage('Route calculated');
                             setIsLoading(false);
                             // const apiConfig: Configuration = {
