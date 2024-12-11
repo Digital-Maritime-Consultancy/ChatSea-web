@@ -137,7 +137,7 @@ const Connect = () => {
                 <CardHeader pad="small"><Heading level={3}>Issue new certificate</Heading></CardHeader>
                 <CardBody pad="small">
                   {!downloadReady ? (
-                    <Text>Certificate service will cost {certUnitPrice} USD per a new cert. Do you want to proceed?</Text>
+                    <Text>Issue a new MCP certificate?</Text>
                   ) : (
                     <Text>Your certificate is ready for download.</Text>
                   )}
