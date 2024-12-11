@@ -7,6 +7,7 @@ import {
   sendMsg,
   sendMsgReceive,
   sendSubjectMsg,
+  sendSubName,
   sendSubOwnMrn
 } from "../mms-browser-agent/core";
 import {MsgType, ProtocolMessageType, ResponseEnum} from "../mms/mmtp";
@@ -63,8 +64,9 @@ export const MmsProvider: React.FC<{children: React.ReactNode }> = ({ children }
       try {
         let ws = getWs()
         if (ws) {
-          await sendSubOwnMrn(mrn, ws)
-
+          await sendSubOwnMrn(mrn, ws);
+          // subscribe S-124 by default
+          await subscribe('s-124');
         } else {
           console.error("Error no websocket:", ws);
         }
@@ -160,6 +162,17 @@ export const MmsProvider: React.FC<{children: React.ReactNode }> = ({ children }
       }
     }
     //Some mmtp logic
+  }
+
+  const subscribe = async (subj: string) => {
+    console.log("subscribe subject", subj);
+    let ws = getWs()
+    if (wsIsConnected && ws) {
+      await sendSubName(subj, ws)
+      console.log("Subscribe Msg sent")
+    } else {
+      console.log("Problem")
+    }
   }
 
   const sendSubject = async (subj : string, body : Uint8Array) => {

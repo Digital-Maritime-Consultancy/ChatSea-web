@@ -40,11 +40,11 @@ const Connect = () => {
     return ownMrn;
   }
 
-  function selectHeaderAccept(accepts: string[]): string | undefined {
+  const selectHeaderAccept = (accepts: string[]): string | undefined => {
     return accepts.find(accept => accept === 'application/json') || accepts[0];
   }
 
-  function selectHeaderContentType(consumes: string[]): string | undefined {
+  const selectHeaderContentType = (consumes: string[]): string | undefined => {
     return consumes.find(contentType => contentType === 'application/x-pem-file') || consumes[0];
   }
 
