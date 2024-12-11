@@ -13,6 +13,7 @@ function HeaderComponent() {
   const [background, setBackground] = useState("brand");
   const { keycloak, authenticated, orgMrn, mrn, token } = useKeycloak();
   const navigate = useNavigate();
+  const redirectUri = window.location.origin;
   const {allowedServices, setAllowedServices, chosenService, setChosenService} = useServiceTopic();
   const { connected, mrn: mrnFromMMS, disconnect } = useMmsContext();
   const [mmsConnStatus, setMmsConnStatus] = useState<MMSConnStatus>(MMSConnStatus.NotConnected);
@@ -75,7 +76,7 @@ function HeaderComponent() {
               <Button hoverIndicator onClick={() => navigate("/connect")} >Connect</Button>
             </>
           )}
-          <Menu label="Account" items={[{ label: 'Disconnect from MMS', onClick: () => callDisconnect() }, { label: 'Log out', onClick: () => keycloak?.logout({redirectUri: "/"}) }]} />
+          <Menu label="Account" items={[{ label: 'Disconnect from MMS', onClick: () => callDisconnect() }, { label: 'Log out', onClick: () => keycloak?.logout({redirectUri}) }]} />
         </>)}
     </Header>
   );
