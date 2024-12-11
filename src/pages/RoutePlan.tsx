@@ -44,8 +44,10 @@ const markerIcon = new Icon({
 export const RoutePlan = forwardRef(({  }: MapProp, ref) => {
     const { authenticated, token, mrn, orgMrn } = useKeycloak();
     const [ myService, setMyService ] = useState<MyUserControllerApi | undefined>(undefined);
+
     useEffect(() => {
         if (!authenticated) return;
+
         const apiConfig: Configuration = {
             basePath: BASE_PATH,
             baseOptions: {
@@ -151,8 +153,8 @@ export const RoutePlan = forwardRef(({  }: MapProp, ref) => {
                         setFooterMessage('Calculating route...');
                         setIsLoading(true);
                         try {
-                            const routeData = await requestARP(routeState.startPoint!, clickedPoint);
-                            setRoutePolyline((routeData as any).coordinates);
+                            const routeData = await requestARP(routeState.startPoint!, clickedPoint, token);
+                            setRoutePolyline(routeData.coordinates);
                             setFooterMessage('Route calculated');
                             setIsLoading(false);
                             const apiConfig: Configuration = {
@@ -164,7 +166,7 @@ export const RoutePlan = forwardRef(({  }: MapProp, ref) => {
                                 },
                             };
                             const userService = new MyUserControllerApi(apiConfig);
-                            userService.registerServiceUsage({serviceId: 7, usageAmount: (routeData as any).elapsedTime} as UserServiceUsageDto);
+                            userService.registerServiceUsage({serviceId: 7, usageAmount: routeData.elapsedTime} as UserServiceUsageDto);
 
                         } catch (error) {
                             setFooterMessage('[!] Error calculating route : ' + error);
