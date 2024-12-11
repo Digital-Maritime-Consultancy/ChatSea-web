@@ -160,16 +160,16 @@ export const RoutePlan = forwardRef(({  }: MapProp, ref) => {
                             setRoutePolyline(routeData.coordinates);
                             setFooterMessage('Route calculated');
                             setIsLoading(false);
-                            // const apiConfig: Configuration = {
-                            //     basePath: BASE_PATH,
-                            //     baseOptions: {
-                            //         headers: {
-                            //             'Authorization': `Bearer ${token}`,
-                            //         },
-                            //     },
-                            // };
-                            // const userService = new MyUserControllerApi(apiConfig);
-                            // userService.registerServiceUsage({serviceId: 7, usageAmount: 1} as UserServiceUsageDto);
+                            const apiConfig: Configuration = {
+                                basePath: BASE_PATH,
+                                baseOptions: {
+                                    headers: {
+                                        'Authorization': `Bearer ${token}`,
+                                    },
+                                },
+                            };
+                            const userService = new MyUserControllerApi(apiConfig);
+                            userService.registerServiceUsage({serviceId: 7, usageAmount: (routeData as any).elapsedTime} as UserServiceUsageDto);
 
                         } catch (error) {
                             setFooterMessage('[!] Error calculating route : ' + error);
