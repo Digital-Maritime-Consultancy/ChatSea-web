@@ -115,49 +115,6 @@ export const Map = forwardRef(({  }: MapProp, ref) => {
         useMapEvents({
             click: async (event) => {
                 if (!isRoutingEnabled) return;
-
-                const clickedPoint: LatLngTuple = [event.latlng.lat, event.latlng.lng];
-        
-                if (!routeState.isSelectingDestination) {
-                    // Select Source point
-                    if (window.confirm('Start Automatic Route Planning from this location?')) {
-                        setRouteState({
-                            ...routeState,
-                            isSelectingDestination: true,
-                            startPoint: clickedPoint
-                        });
-                        setTempLocationMarkers({ start: clickedPoint });
-                        setFooterMessage('Choose a destination');
-                    }
-                } else {
-                    // Select Destination point & Request ARP to API
-                    if (window.confirm('Make this location as destination?')) {
-                        setRouteState({
-                            ...routeState,
-                            isSelectingDestination: false,
-                            isCalculating: true,
-                            endPoint: clickedPoint
-                        });
-                        setTempLocationMarkers({ ...tempLocationMarkers, end: clickedPoint });
-                        setFooterMessage('Calculating route...');
-                            
-                        try {
-                            const routeData = await requestARP2(routeState.startPoint!, clickedPoint);
-                            setRoutePolyline(routeData.coordinates);
-                            setFooterMessage('Route calculated');
-                        } catch (error) {
-                            setFooterMessage('[!] Error calculating route : ' + error);
-                        } finally {
-                            setIsRoutingEnabled(false);
-                            setTempLocationMarkers({});
-                            setRouteState({
-                                ...routeState,
-                                isSelectingDestination: false,
-                                isCalculating: false
-                            });
-                        }
-                    }
-                }
             },
         });
         return null;
@@ -165,36 +122,6 @@ export const Map = forwardRef(({  }: MapProp, ref) => {
 
     return (
         <div style={{ position: 'relative' }}>
-            {/* ARP enable box */}
-            <Box
-                background="brand"
-                pad="small"
-                style={{
-                    position: 'absolute',
-                    top: '10px',
-                    right: '10px',
-                    zIndex: 1000
-                }}
-            >
-                <CheckBox
-                    label={"Automatic Route Planning"}
-                    checked={isRoutingEnabled}
-                    onChange={() => {
-                        if (!isRoutingEnabled) {
-                            setFooterMessage('Route planning is enabled. Choose a starting point.');
-                        } else {
-                            setFooterMessage('');
-                            setRouteState({
-                                ...routeState,
-                                isSelectingDestination: false,
-                                isCalculating: false
-                            });
-                            setTempLocationMarkers({});
-                        }
-                        setIsRoutingEnabled(!isRoutingEnabled);
-                    }}
-                />
-            </Box>
             
             {/* leaflet map */}
             <MapContainer

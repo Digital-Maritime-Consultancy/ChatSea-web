@@ -13,9 +13,7 @@ export const requestARP = async (start: LatLngTuple, end: LatLngTuple, token : s
       `&start_longitude=${start[1]}` +
       `&end_latitude=${end[0]}` +
       `&end_longitude=${end[1]}`;
-
-    console.log("send request to " + uri);
-    
+      
     const response = await fetch(uri, {
       method: 'GET',
       headers: {
