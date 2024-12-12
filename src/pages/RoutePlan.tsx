@@ -9,6 +9,7 @@ import FullScreenSpinner from "../components/FullScreenSpinner";
 import { Configuration, MyUserControllerApi, UserServiceUsageDto } from "../backend-api/saas-management";
 import { BASE_PATH } from "../backend-api/saas-management/base";
 import useKeycloak from "../hooks/useKeycloak";
+import { getOrgServiceUsage, getServiceCostLimit } from "../util/saasAPICaller";
 
 export interface MapProp {
 }
@@ -42,8 +43,9 @@ const markerIcon = new Icon({
 });
 
 export const RoutePlan = forwardRef(({  }: MapProp, ref) => {
-    const { authenticated, token, mrn, orgMrn } = useKeycloak();
+    const { keycloak, authenticated, token, mrn, orgMrn } = useKeycloak();
     const [ myService, setMyService ] = useState<MyUserControllerApi | undefined>(undefined);
+    const [ costLimit, setCostLimit ] = useState<number>(0);
 
     useEffect(() => {
         if (!authenticated) return;
@@ -58,6 +60,18 @@ export const RoutePlan = forwardRef(({  }: MapProp, ref) => {
         };
         const userService = new MyUserControllerApi(apiConfig);
         setMyService(userService);
+
+        getServiceCostLimit(keycloak!, token, orgMrn).then(
+            (limit) => {
+                console.log(limit);
+                setCostLimit(limit);
+            }
+        );
+        getOrgServiceUsage(keycloak!, token, orgMrn).then(
+            (usage) => {
+                console.log(usage);
+            }
+        );
     }, [authenticated]);
     // current location
     const [location, setLocation] = useState<LatLngTuple>([34.922702, 128.567756]);

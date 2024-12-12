@@ -76,4 +76,10 @@ export interface OrganizationServiceUsage {
      * @memberof OrganizationServiceUsage
      */
     usageDate: string;
+
+    /**
+     * @type {number}
+     * @memberof OrganizationServiceUsage
+     */
+    usageCost?: number;
 }
