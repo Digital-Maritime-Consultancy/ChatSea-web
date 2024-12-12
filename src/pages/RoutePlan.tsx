@@ -6,9 +6,10 @@ import { parseS124, getMeanPosition } from "../util/s124Parser";
 import { requestARP } from "../util/arp";
 import S100Data from "../models/S100data";
 import FullScreenSpinner from "../components/FullScreenSpinner";
-import { Configuration, MyUserControllerApi, UserServiceUsageDto } from "../backend-api/saas-management";
+import { Configuration, MyUserControllerApi, Service, UserServiceUsageDto } from "../backend-api/saas-management";
 import { BASE_PATH } from "../backend-api/saas-management/base";
 import useKeycloak from "../hooks/useKeycloak";
+import { getAllActiveServices, getOrgServiceUsageCost, getServiceCostLimit, reportUsage } from "../util/saasAPICaller";
 
 export interface MapProp {
 }
@@ -42,28 +43,14 @@ const markerIcon = new Icon({
 });
 
 export const RoutePlan = forwardRef(({  }: MapProp, ref) => {
-    const { authenticated, token, mrn, orgMrn } = useKeycloak();
-    const [ myService, setMyService ] = useState<MyUserControllerApi | undefined>(undefined);
-
-    useEffect(() => {
-        if (!authenticated) return;
-
-        const apiConfig: Configuration = {
-            basePath: BASE_PATH,
-            baseOptions: {
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                },
-            },
-        };
-        const userService = new MyUserControllerApi(apiConfig);
-        setMyService(userService);
-    }, [authenticated]);
+    const { keycloak, authenticated, token, mrn, orgMrn } = useKeycloak();
     // current location
     const [location, setLocation] = useState<LatLngTuple>([34.922702, 128.567756]);
     const [isLoading, setIsLoading] = useState<boolean>(false);
     // S100 Sample
     const [data, setData] = useState<S100Data[]>([]);
+    const [serviceId, setServiceId] = useState(0);
+    const [serviceUnitPrice, setServiceUnitPrice] = useState(0);
 
     // ARP 관련
     const [isRoutingEnabled, setIsRoutingEnabled] = useState<boolean>(false);
@@ -77,6 +64,40 @@ export const RoutePlan = forwardRef(({  }: MapProp, ref) => {
         end?: LatLngTuple;
     }>({});
     const [routePolyline, setRoutePolyline] = useState<LatLngTuple[]>([]);
+
+    useEffect(() => {
+        if (!authenticated) return;
+        getAllActiveServices(keycloak!, token).then((services) => {
+            const service = services.find((service: Service) => service.name === 'Automatic Route Planning');
+            if (service === undefined) {
+                alert('Service is not active for you');
+            } else {
+                setServiceId(service.id);
+                setServiceUnitPrice(service.unitPrice);
+            }
+        });
+    }, [authenticated]);
+    
+    const canUseService = async (incomingUsageAmount: number = 0) => 
+    {
+        const limit = await getServiceCostLimit(keycloak!, token, orgMrn);
+        const usage = await getOrgServiceUsageCost(keycloak!, token, orgMrn);
+        const services = await getAllActiveServices(keycloak!, token);
+        const service = services.find((service: Service) => service.name === 'Automatic Route Planning');
+        if (service === undefined) {
+            alert('Service is not active for you');
+            return false;
+        } else {
+            setServiceId(service.id);
+            setServiceUnitPrice(service.unitPrice);
+            if (usage + incomingUsageAmount * service.unitPrice < limit){
+                return true;
+            } else {
+                alert('Service limit reached! Current usage: ' + (usage + incomingUsageAmount * service.unitPrice) + ' / Limit: ' + limit);
+                return false;
+            }
+        }
+    }
 
     // flyTo
     useImperativeHandle(ref, () => ({
@@ -154,20 +175,15 @@ export const RoutePlan = forwardRef(({  }: MapProp, ref) => {
                         setIsLoading(true);
                         try {
                             const routeData = await requestARP(routeState.startPoint!, clickedPoint, token);
+                            if (!await canUseService(routeData.elapsedTime)) {
+                                return;
+                            }
                             setRoutePolyline(routeData.coordinates);
                             setFooterMessage('Route calculated');
+                            reportUsage(keycloak!, token, serviceId, routeData.elapsedTime, routeData.elapsedTime * serviceUnitPrice).then((data) => {
+                                console.log(data);
+                            });
                             setIsLoading(false);
-                            const apiConfig: Configuration = {
-                                basePath: BASE_PATH,
-                                baseOptions: {
-                                    headers: {
-                                        'Authorization': `Bearer ${token}`,
-                                    },
-                                },
-                            };
-                            const userService = new MyUserControllerApi(apiConfig);
-                            userService.registerServiceUsage({serviceId: 7, usageAmount: routeData.elapsedTime} as UserServiceUsageDto);
-
                         } catch (error) {
                             setFooterMessage('[!] Error calculating route : ' + error);
                         } finally {

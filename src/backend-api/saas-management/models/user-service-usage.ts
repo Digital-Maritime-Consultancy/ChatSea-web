@@ -76,4 +76,10 @@ export interface UserServiceUsage {
      * @memberof UserServiceUsage
      */
     usageDate: string;
+
+    /**
+     * @type {number}
+     * @memberof UserServiceUsage
+     */
+    usageCost?: number;
 }

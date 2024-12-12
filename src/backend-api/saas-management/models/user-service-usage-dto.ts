@@ -37,4 +37,10 @@ export interface UserServiceUsageDto {
      * @memberof UserServiceUsageDto
      */
     usageAmount: number;
+
+    /**
+     * @type {number}
+     * @memberof UserServiceUsageDto
+     */
+    usageCost?: number;
 }
