@@ -1,16 +1,16 @@
-import React, {useEffect, useState} from "react";
+import React, { useEffect, useState } from "react";
 import { Box, Button, Heading, TextInput, Select, TextArea, RadioButtonGroup, FileInput } from "grommet";
-import {useMsgState, useMsgStateDispatch} from "../context/MessageContext";
+import { useMsgState, useMsgStateDispatch } from "../context/MessageContext";
 import { getS100FileName, isS100File } from "../util/S100FileUtil";
 import { useMmsContext } from '../context/MmsContext';
 import { MyUserControllerApi } from "../backend-api/saas-management/apis/my-user-controller-api";
-import { Configuration, UserServiceUsageDto } from "../backend-api/saas-management";
+import { Configuration, Service, UserServiceUsageDto } from "../backend-api/saas-management";
 import { BASE_PATH } from "../backend-api/saas-management/base";
 import useKeycloak from "../hooks/useKeycloak";
-import { reportUsage } from "../util/saasAPICaller";
+import { getAllActiveServices, getOrgServiceUsageCost, getServiceCostLimit, reportUsage } from "../util/saasAPICaller";
 
 const Chat = () => {
-  const { keycloak, token } = useKeycloak();
+  const { keycloak, token, orgMrn } = useKeycloak();
   const [receiverType, setReceiverType] = useState("");
   const [receiverMrn, setReceiverMrn] = useState("");
   const [message, setMessage] = useState("");
@@ -21,12 +21,27 @@ const Chat = () => {
   const mrnPlaceholder = "urn:mrn:mcp:device:mcc:core:abc"
   const [messagePlaceholder, setMessagePlaceholder] = useState("Write Message Here"); // State for placeholder
   const [sendBtnPlaceholder, setSendBtnPlaceholder] = useState("Send"); // State for placeholder
-  const {connected, signingKey, sendDirect, sendSubject} = useMmsContext();
-
-
+  const { connected, signingKey, sendDirect, sendSubject } = useMmsContext();
+  const [serviceId, setServiceId] = useState(0);
+  const [serviceUnitPrice, setServiceUnitPrice] = useState(0);
 
   useEffect(() => {
   }, [useMmsContext()]); //Do something whenever ConnetioNState updates
+
+  useEffect(() => {
+    if (!connected) {
+      return;
+    }
+    getAllActiveServices(keycloak!, token).then((services) => {
+      const service = services.find((service: Service) => service.name === 'Chat');
+      if (service === undefined) {
+          alert('Service is not active for you');
+      } else {
+          setServiceId(service.id);
+          setServiceUnitPrice(service.unitPrice);
+      }
+  });
+  }, [connected]); 
 
   useEffect(() => {
     if (msgState && msgState.senderMrn && msgState.mmtpMsgData.length > 0) {
@@ -45,11 +60,35 @@ const Chat = () => {
     }
   }, [msgState]);
 
+  const canUseService = async (incomingUsageAmount: number = 0) => 
+  {
+      const limit = await getServiceCostLimit(keycloak!, token, orgMrn);
+      const usage = await getOrgServiceUsageCost(keycloak!, token, orgMrn);
+      const services = await getAllActiveServices(keycloak!, token);
+      const service = services.find((service: Service) => service.name === 'Chat');
+      if (service === undefined) {
+        alert('Service is not active for you');
+          return false;
+      } else {
+        setServiceId(service.id);
+        setServiceUnitPrice(service.unitPrice);
+        if (usage + incomingUsageAmount * service.unitPrice < limit){
+            return true;
+        } else {
+            alert('Service limit reached! Current usage: ' + (usage + incomingUsageAmount * service.unitPrice) + ' / Limit: ' + limit);
+            return false;
+        }
+      }
+  }
+
   const addChatMessage = (message: string) => {
     setReceivedMessages((prevMessages) => [message, ...prevMessages]);
   }
 
   const handleSendClick = async () => {
+    if (!await canUseService()) {
+      return;
+    }
     const encoder = new TextEncoder();
     if (receiverType == "subject") {
       sendSubject(selectedSubject, encoder.encode(message))
@@ -59,8 +98,8 @@ const Chat = () => {
     setMessage("")
     setMessagePlaceholder("Message Sent");
     setTimeout(() => setMessagePlaceholder("Write Message Here"), 3000); // Reset after 3 seconds
-    reportUsage(keycloak!, token, 6, 1).then((data) => {
-      console.log("Usage reported :" + data);
+    reportUsage(keycloak!, token, serviceId, 1, serviceUnitPrice).then((data) => {
+      console.log(data);
     });
   };
 
