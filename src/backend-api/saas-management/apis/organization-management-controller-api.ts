@@ -23,6 +23,7 @@ import { OrganizationSubscription } from '../models';
 import { OrganizationSubscriptionDto } from '../models';
 import { PageInvoice } from '../models';
 import { PagePayment } from '../models';
+import { PageServiceSubscription } from '../models';
 import { PageSubscriptionPlan } from '../models';
 import { PageUserServiceUsage } from '../models';
 import { Payment } from '../models';
@@ -980,10 +981,13 @@ export const OrganizationManagementControllerApiAxiosParamCreator = function (co
         /**
          * 
          * @param {string} orgMrn 
+         * @param {number} [page] Zero-based page index (0..N)
+         * @param {number} [size] The size of the page to be returned
+         * @param {Array<string>} [sort] Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported.
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        getServiceSubscriptions: async (orgMrn: string, options: AxiosRequestConfig = {}): Promise<RequestArgs> => {
+        getServiceSubscriptions: async (orgMrn: string, page?: number, size?: number, sort?: Array<string>, options: AxiosRequestConfig = {}): Promise<RequestArgs> => {
             // verify required parameter 'orgMrn' is not null or undefined
             if (orgMrn === null || orgMrn === undefined) {
                 throw new RequiredError('orgMrn','Required parameter orgMrn was null or undefined when calling getServiceSubscriptions.');
@@ -999,6 +1003,18 @@ export const OrganizationManagementControllerApiAxiosParamCreator = function (co
             const localVarRequestOptions :AxiosRequestConfig = { method: 'GET', ...baseOptions, ...options};
             const localVarHeaderParameter = {} as any;
             const localVarQueryParameter = {} as any;
+
+            if (page !== undefined) {
+                localVarQueryParameter['page'] = page;
+            }
+
+            if (size !== undefined) {
+                localVarQueryParameter['size'] = size;
+            }
+
+            if (sort) {
+                localVarQueryParameter['sort'] = sort;
+            }
 
             const query = new URLSearchParams(localVarUrlObj.search);
             for (const key in localVarQueryParameter) {
@@ -1478,6 +1494,54 @@ export const OrganizationManagementControllerApiAxiosParamCreator = function (co
                 options: localVarRequestOptions,
             };
         },
+        /**
+         * 
+         * @param {number} body 
+         * @param {string} orgMrn 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        updateUsageCostLimit: async (body: number, orgMrn: string, options: AxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'body' is not null or undefined
+            if (body === null || body === undefined) {
+                throw new RequiredError('body','Required parameter body was null or undefined when calling updateUsageCostLimit.');
+            }
+            // verify required parameter 'orgMrn' is not null or undefined
+            if (orgMrn === null || orgMrn === undefined) {
+                throw new RequiredError('orgMrn','Required parameter orgMrn was null or undefined when calling updateUsageCostLimit.');
+            }
+            const localVarPath = `/api/org-management/{orgMrn}/usage-cost-limit`
+                .replace(`{${"orgMrn"}}`, encodeURIComponent(String(orgMrn)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, 'https://example.com');
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+            const localVarRequestOptions :AxiosRequestConfig = { method: 'PUT', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+
+            const query = new URLSearchParams(localVarUrlObj.search);
+            for (const key in localVarQueryParameter) {
+                query.set(key, localVarQueryParameter[key]);
+            }
+            for (const key in options.params) {
+                query.set(key, options.params[key]);
+            }
+            localVarUrlObj.search = (new URLSearchParams(query)).toString();
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            const needsSerialization = (typeof body !== "string") || localVarRequestOptions.headers!['Content-Type'] === 'application/json';
+            localVarRequestOptions.data =  needsSerialization ? JSON.stringify(body !== undefined ? body : {}) : (body || "");
+
+            return {
+                url: localVarUrlObj.pathname + localVarUrlObj.search + localVarUrlObj.hash,
+                options: localVarRequestOptions,
+            };
+        },
     }
 };
 
@@ -1774,11 +1838,14 @@ export const OrganizationManagementControllerApiFp = function(configuration?: Co
         /**
          * 
          * @param {string} orgMrn 
+         * @param {number} [page] Zero-based page index (0..N)
+         * @param {number} [size] The size of the page to be returned
+         * @param {Array<string>} [sort] Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported.
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async getServiceSubscriptions(orgMrn: string, options?: AxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => Promise<AxiosResponse<Array<ServiceSubscription>>>> {
-            const localVarAxiosArgs = await OrganizationManagementControllerApiAxiosParamCreator(configuration).getServiceSubscriptions(orgMrn, options);
+        async getServiceSubscriptions(orgMrn: string, page?: number, size?: number, sort?: Array<string>, options?: AxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => Promise<AxiosResponse<PageServiceSubscription>>> {
+            const localVarAxiosArgs = await OrganizationManagementControllerApiAxiosParamCreator(configuration).getServiceSubscriptions(orgMrn, page, size, sort, options);
             return (axios: AxiosInstance = globalAxios, basePath: string = BASE_PATH) => {
                 const axiosRequestArgs :AxiosRequestConfig = {...localVarAxiosArgs.options, url: basePath + localVarAxiosArgs.url};
                 return axios.request(axiosRequestArgs);
@@ -1913,6 +1980,20 @@ export const OrganizationManagementControllerApiFp = function(configuration?: Co
          */
         async updateSubscriptionPlan1(body: SubscriptionPlanDto, orgMrn: string, id: number, options?: AxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => Promise<AxiosResponse<void>>> {
             const localVarAxiosArgs = await OrganizationManagementControllerApiAxiosParamCreator(configuration).updateSubscriptionPlan1(body, orgMrn, id, options);
+            return (axios: AxiosInstance = globalAxios, basePath: string = BASE_PATH) => {
+                const axiosRequestArgs :AxiosRequestConfig = {...localVarAxiosArgs.options, url: basePath + localVarAxiosArgs.url};
+                return axios.request(axiosRequestArgs);
+            };
+        },
+        /**
+         * 
+         * @param {number} body 
+         * @param {string} orgMrn 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async updateUsageCostLimit(body: number, orgMrn: string, options?: AxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => Promise<AxiosResponse<void>>> {
+            const localVarAxiosArgs = await OrganizationManagementControllerApiAxiosParamCreator(configuration).updateUsageCostLimit(body, orgMrn, options);
             return (axios: AxiosInstance = globalAxios, basePath: string = BASE_PATH) => {
                 const axiosRequestArgs :AxiosRequestConfig = {...localVarAxiosArgs.options, url: basePath + localVarAxiosArgs.url};
                 return axios.request(axiosRequestArgs);
@@ -2134,11 +2215,14 @@ export const OrganizationManagementControllerApiFactory = function (configuratio
         /**
          * 
          * @param {string} orgMrn 
+         * @param {number} [page] Zero-based page index (0..N)
+         * @param {number} [size] The size of the page to be returned
+         * @param {Array<string>} [sort] Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported.
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async getServiceSubscriptions(orgMrn: string, options?: AxiosRequestConfig): Promise<AxiosResponse<Array<ServiceSubscription>>> {
-            return OrganizationManagementControllerApiFp(configuration).getServiceSubscriptions(orgMrn, options).then((request) => request(axios, basePath));
+        async getServiceSubscriptions(orgMrn: string, page?: number, size?: number, sort?: Array<string>, options?: AxiosRequestConfig): Promise<AxiosResponse<PageServiceSubscription>> {
+            return OrganizationManagementControllerApiFp(configuration).getServiceSubscriptions(orgMrn, page, size, sort, options).then((request) => request(axios, basePath));
         },
         /**
          * 
@@ -2237,6 +2321,16 @@ export const OrganizationManagementControllerApiFactory = function (configuratio
          */
         async updateSubscriptionPlan1(body: SubscriptionPlanDto, orgMrn: string, id: number, options?: AxiosRequestConfig): Promise<AxiosResponse<void>> {
             return OrganizationManagementControllerApiFp(configuration).updateSubscriptionPlan1(body, orgMrn, id, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @param {number} body 
+         * @param {string} orgMrn 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async updateUsageCostLimit(body: number, orgMrn: string, options?: AxiosRequestConfig): Promise<AxiosResponse<void>> {
+            return OrganizationManagementControllerApiFp(configuration).updateUsageCostLimit(body, orgMrn, options).then((request) => request(axios, basePath));
         },
     };
 };
@@ -2475,12 +2569,15 @@ export class OrganizationManagementControllerApi extends BaseAPI {
     /**
      * 
      * @param {string} orgMrn 
+     * @param {number} [page] Zero-based page index (0..N)
+     * @param {number} [size] The size of the page to be returned
+     * @param {Array<string>} [sort] Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported.
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof OrganizationManagementControllerApi
      */
-    public async getServiceSubscriptions(orgMrn: string, options?: AxiosRequestConfig) : Promise<AxiosResponse<Array<ServiceSubscription>>> {
-        return OrganizationManagementControllerApiFp(this.configuration).getServiceSubscriptions(orgMrn, options).then((request) => request(this.axios, this.basePath));
+    public async getServiceSubscriptions(orgMrn: string, page?: number, size?: number, sort?: Array<string>, options?: AxiosRequestConfig) : Promise<AxiosResponse<PageServiceSubscription>> {
+        return OrganizationManagementControllerApiFp(this.configuration).getServiceSubscriptions(orgMrn, page, size, sort, options).then((request) => request(this.axios, this.basePath));
     }
     /**
      * 
@@ -2588,5 +2685,16 @@ export class OrganizationManagementControllerApi extends BaseAPI {
      */
     public async updateSubscriptionPlan1(body: SubscriptionPlanDto, orgMrn: string, id: number, options?: AxiosRequestConfig) : Promise<AxiosResponse<void>> {
         return OrganizationManagementControllerApiFp(this.configuration).updateSubscriptionPlan1(body, orgMrn, id, options).then((request) => request(this.axios, this.basePath));
+    }
+    /**
+     * 
+     * @param {number} body 
+     * @param {string} orgMrn 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof OrganizationManagementControllerApi
+     */
+    public async updateUsageCostLimit(body: number, orgMrn: string, options?: AxiosRequestConfig) : Promise<AxiosResponse<void>> {
+        return OrganizationManagementControllerApiFp(this.configuration).updateUsageCostLimit(body, orgMrn, options).then((request) => request(this.axios, this.basePath));
     }
 }

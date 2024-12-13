@@ -67,4 +67,10 @@ export interface OrganizationDto {
      * @memberof OrganizationDto
      */
     currentBalance?: number;
+
+    /**
+     * @type {number}
+     * @memberof OrganizationDto
+     */
+    usageCostLimit?: number;
 }

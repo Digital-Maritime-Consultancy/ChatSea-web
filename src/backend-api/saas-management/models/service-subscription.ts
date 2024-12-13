@@ -14,7 +14,6 @@
 
 import { Organization } from './organization';
 import { Service } from './service';
-import { UserServiceSubscription } from './user-service-subscription';
  /**
  * 
  *
@@ -82,10 +81,4 @@ export interface ServiceSubscription {
      * @memberof ServiceSubscription
      */
     pricingModel: string;
-
-    /**
-     * @type {Array<UserServiceSubscription>}
-     * @memberof ServiceSubscription
-     */
-    userServiceSubscriptions?: Array<UserServiceSubscription>;
 }

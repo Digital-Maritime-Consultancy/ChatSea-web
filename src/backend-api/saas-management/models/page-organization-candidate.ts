@@ -27,13 +27,13 @@ export interface PageOrganizationCandidate {
      * @type {number}
      * @memberof PageOrganizationCandidate
      */
-    totalElements?: number;
+    totalPages?: number;
 
     /**
      * @type {number}
      * @memberof PageOrganizationCandidate
      */
-    totalPages?: number;
+    totalElements?: number;
 
     /**
      * @type {PageableObject}

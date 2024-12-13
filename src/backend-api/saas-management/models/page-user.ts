@@ -27,13 +27,13 @@ export interface PageUser {
      * @type {number}
      * @memberof PageUser
      */
-    totalElements?: number;
+    totalPages?: number;
 
     /**
      * @type {number}
      * @memberof PageUser
      */
-    totalPages?: number;
+    totalElements?: number;
 
     /**
      * @type {PageableObject}
