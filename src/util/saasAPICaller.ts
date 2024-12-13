@@ -108,6 +108,6 @@ export const activateServiceSubscription = async (keycloak: Keycloak, token: str
 }
 
 export const deactivateServiceSubscription = async (keycloak: Keycloak, token: string, subscriptionId: number) => {
-  const apiCall = (config: Configuration) => new MyUserControllerApi(config).activateSubscription(subscriptionId);
+  const apiCall = (config: Configuration) => new MyUserControllerApi(config).deactivateSubscription(subscriptionId);
   return makeApiCall(keycloak, token, apiCall);
 }
