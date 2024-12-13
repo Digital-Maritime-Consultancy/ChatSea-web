@@ -5,6 +5,8 @@ import { useNavigate } from 'react-router-dom'
 import { useState } from "react";
 import { useServiceTopic } from "../context/ServiceTopicContext";
 import { ServiceInfo, ServiceTopic } from "../models/serviceTopic";
+import useKeycloak from "../hooks/useKeycloak";
+import { activateServiceSubscription, deactivateServiceSubscription } from "../util/saasAPICaller";
 
 export interface ConfigurationProp {
   connect: () => void;
@@ -13,8 +15,8 @@ export interface ConfigurationProp {
 const Configuration = ({ connect }: ConfigurationProp) => {
   const {disconnect} = useMmsContext();
   const navigate = useNavigate();
-  const {allowedServices, setAllowedServices, chosenService, setChosenService} = useServiceTopic();
-  
+  const { keycloak, token } = useKeycloak();
+  const {allowedServices, setAllowedServices, chosenServiceNames, setChosenServiceNames, mySubscriptions} = useServiceTopic();
   const serviceTopics = allowedServices.map((service) => service.name);
 
   const readMrnFromCert = (cert: Certificate): string => {
@@ -29,7 +31,24 @@ const Configuration = ({ connect }: ConfigurationProp) => {
   }
 
   const handleSave = () => {
-    console.log("Config done");
+    // iterate allowedServices
+    allowedServices.forEach((service) => {
+      const serviceName = service.name;
+      // iterate possibleSubscriptions
+      mySubscriptions.forEach((sub) => {
+        if (sub.serviceSubscription!.service!.name === serviceName) {
+          // update subscription if activity changes
+          if (chosenServiceNames.includes(serviceName) && !sub.isActive) {
+            activateServiceSubscription(keycloak!, token, sub.id!);
+          } else if (!chosenServiceNames.includes(serviceName) && sub.isActive) {
+            deactivateServiceSubscription(keycloak!, token, sub.id!);
+          } else {
+            alert("You need to create user service subscription for the service first");
+          }
+        }
+      });
+    });
+    console.log(chosenServiceNames);
   };
 
   const handleDisconnect = () => {
@@ -44,9 +63,9 @@ const Configuration = ({ connect }: ConfigurationProp) => {
         <Heading level={3}>Select Service</Heading>
         <Box pad="medium">
         <CheckBoxGroup
-        value={chosenService}
+        value={chosenServiceNames}
         onChange={(event: any) => {
-          setChosenService(event.value);
+          setChosenServiceNames(event.value);
         }}
         options={serviceTopics}
       />

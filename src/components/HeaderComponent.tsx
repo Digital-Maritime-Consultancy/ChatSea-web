@@ -5,29 +5,35 @@ import useKeycloak from "../hooks/useKeycloak";
 import { useMmsContext } from '../context/MmsContext';
 import { useServiceTopic } from "../context/ServiceTopicContext";
 import MMSStatus, { MMSConnStatus } from "./MMSStatus";
-import { Configuration, UserManagementControllerApi } from "../backend-api/saas-management";
+import { Configuration, UserManagementControllerApi, UserServiceSubscription } from "../backend-api/saas-management";
 import { BASE_PATH } from "../backend-api/saas-management/base";
-import { fetchUserServiceSubscriptions } from "../util/saasAPICaller";
+import { fetchActiveSubscriptions, fetchPossibleSubscriptions, fetchUserServiceSubscriptions } from "../util/saasAPICaller";
+import { ServiceTopic } from "../models/serviceTopic";
 
 function HeaderComponent() {
   const [background, setBackground] = useState("brand");
   const { keycloak, authenticated, orgMrn, mrn, token } = useKeycloak();
   const navigate = useNavigate();
   const redirectUri = window.location.origin;
-  const {allowedServices, setAllowedServices, chosenService, setChosenService} = useServiceTopic();
+  const {allowedServices, setAllowedServices, chosenServiceNames: chosenService, setChosenServiceNames: setChosenService, setMySubscriptions: setPossibleSubscriptions} = useServiceTopic();
   const { connected, mrn: mrnFromMMS, disconnect } = useMmsContext();
   const [mmsConnStatus, setMmsConnStatus] = useState<MMSConnStatus>(MMSConnStatus.NotConnected);
   useEffect(() => {
     if (authenticated) {
-      fetchUserServiceSubscriptions(keycloak!, token, orgMrn, mrn).then((data) => {
-        // const services = data.map((service: any) => {
-        //   return {
-        //     name: service.serviceName,
-        //     value: service.serviceId,
-        //     link: `/service/${service.serviceId}`
-        //   }
-        // });
-        // setAllowedServices(services);
+      fetchPossibleSubscriptions(keycloak!, token).then((response) => {
+        const data = response.data;
+        const services = (data as any).map((sub: any) => 
+          sub.serviceSubscription.service.name === 'S-124' ? { name: sub.serviceSubscription.service.name, value: ServiceTopic.S124, link: '/s124' } :
+          sub.serviceSubscription.service.name === 'Automatic Route Planning' ? { name: sub.serviceSubscription.service.name, value: ServiceTopic.ARP, link: '/routeplan' } :
+          sub.serviceSubscription.service.name === 'Chat' ? { name: sub.serviceSubscription.service.name, value: ServiceTopic.CHAT, link: '/chat' } : null
+        );
+        setAllowedServices(services);
+        setPossibleSubscriptions(data as unknown as UserServiceSubscription[]);
+      });
+      fetchActiveSubscriptions(keycloak!, token).then((response) => {
+        const data = response.data;
+        const services = (data as any).map((sub: any) => sub.serviceSubscription.service.name);
+        setChosenService(services);
       });
     }
     if (connected) {
@@ -74,6 +80,7 @@ function HeaderComponent() {
                 (service) => <Button key={service.value} hoverIndicator onClick={() => navigate(service.link)}>{service.name}</Button>
               )}
               <Button hoverIndicator onClick={() => navigate("/connect")} >Connect</Button>
+              <Button hoverIndicator onClick={() => navigate("/conf")}>Configuration</Button>
             </>
           )}
           <Menu label="Account" items={[{ label: 'Disconnect from MMS', onClick: () => callDisconnect() }, { label: 'Log out', onClick: () => keycloak?.logout({redirectUri}) }]} />
