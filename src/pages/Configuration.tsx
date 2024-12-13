@@ -86,20 +86,30 @@ const Configuration = ({ connect }: ConfigurationProp) => {
     <Main pad="large">
       <Heading>Configuration</Heading>
       <Box>
-        <Heading level={3}>Select Service</Heading>
-        <Box pad="medium">
-        <CheckBoxGroup
-        value={serviceNames}
-        onChange={(event: any) => {
-          setServiceNames(event.value);
-        }}
-        options={serviceTopics.sort()}
-      />
+        { serviceTopics.length === 0 && <>
+            <Heading level={3}>No services available</Heading> 
+            <Box pad={{ top: "medium" }}>
+            <Button label="Disconnect" secondary onClick={handleDisconnect} margin={{ top: "medium" }} />
+          </Box>
+          </>
+        }
+        { serviceTopics.length > 0 && 
+          <>
+          <Heading level={3}>Select Service</Heading>
+          <Box pad="medium">
+          <CheckBoxGroup
+          value={serviceNames}
+          onChange={(event: any) => {
+            setServiceNames(event.value);
+          }}
+          options={serviceTopics.sort()}
+        />
+          </Box>
+        <Box pad={{ top: "medium" }}>
+          <Button label="Save" primary onClick={handleSave} />
+          <Button label="Disconnect" secondary onClick={handleDisconnect} margin={{ top: "medium" }} />
         </Box>
-      <Box pad={{ top: "medium" }}>
-        <Button label="Save" primary onClick={handleSave} />
-        <Button label="Disconnect" secondary onClick={handleDisconnect} margin={{ top: "medium" }} />
-      </Box>
+          </>}
       </Box>
     </Main>
   );
