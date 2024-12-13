@@ -15,7 +15,7 @@ function HeaderComponent() {
   const { keycloak, authenticated, orgMrn, mrn, token } = useKeycloak();
   const navigate = useNavigate();
   const redirectUri = window.location.origin;
-  const {allowedServices, setAllowedServices, chosenServiceNames: chosenService, setChosenServiceNames: setChosenService, setMySubscriptions: setPossibleSubscriptions} = useServiceTopic();
+  const {allowedServices, setAllowedServices, chosenServiceNames, setChosenServiceNames, setMySubscriptions} = useServiceTopic();
   const { connected, mrn: mrnFromMMS, disconnect } = useMmsContext();
   const [mmsConnStatus, setMmsConnStatus] = useState<MMSConnStatus>(MMSConnStatus.NotConnected);
   useEffect(() => {
@@ -28,12 +28,12 @@ function HeaderComponent() {
           sub.serviceSubscription.service.name === 'Chat' ? { name: sub.serviceSubscription.service.name, value: ServiceTopic.CHAT, link: '/chat' } : null
         );
         setAllowedServices(services);
-        setPossibleSubscriptions(data as unknown as UserServiceSubscription[]);
+        setMySubscriptions(data as unknown as UserServiceSubscription[]);
       });
       fetchActiveSubscriptions(keycloak!, token).then((response) => {
         const data = response.data;
         const services = (data as any).map((sub: any) => sub.serviceSubscription.service.name);
-        setChosenService(services);
+        setChosenServiceNames(services);
       });
     }
     if (connected) {
@@ -66,7 +66,7 @@ function HeaderComponent() {
             <>
                 <Button hoverIndicator onClick={() => navigate("/dashboard")}>Dashboard</Button>
                 {allowedServices.map((service) => {
-                  if (chosenService.includes(service.name)) {
+                  if (chosenServiceNames.includes(service.name)) {
                     return <Button key={service.value} hoverIndicator onClick={() => navigate(service.link)}>{service.name}</Button>
                   }
                 })}
@@ -76,7 +76,7 @@ function HeaderComponent() {
           {!connected && (
             <>
               <Button hoverIndicator onClick={() => navigate("/dashboard")}>Dashboard</Button>
-              {chosenService.includes("Route Planning") && allowedServices.filter((service) => service.value === "arp").map(
+              {chosenServiceNames.includes("Automatic Route Planning") && allowedServices.filter((service) => service.value === "arp").map(
                 (service) => <Button key={service.value} hoverIndicator onClick={() => navigate(service.link)}>{service.name}</Button>
               )}
               <Button hoverIndicator onClick={() => navigate("/connect")} >Connect</Button>

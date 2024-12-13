@@ -6,7 +6,8 @@ import { useState } from "react";
 import { useServiceTopic } from "../context/ServiceTopicContext";
 import { ServiceInfo, ServiceTopic } from "../models/serviceTopic";
 import useKeycloak from "../hooks/useKeycloak";
-import { activateServiceSubscription, deactivateServiceSubscription } from "../util/saasAPICaller";
+import { activateServiceSubscription, deactivateServiceSubscription, fetchActiveSubscriptions, fetchPossibleSubscriptions } from "../util/saasAPICaller";
+import { UserServiceSubscription } from "../backend-api/saas-management";
 
 export interface ConfigurationProp {
   connect: () => void;
@@ -16,7 +17,8 @@ const Configuration = ({ connect }: ConfigurationProp) => {
   const {disconnect} = useMmsContext();
   const navigate = useNavigate();
   const { keycloak, token } = useKeycloak();
-  const {allowedServices, setAllowedServices, chosenServiceNames, setChosenServiceNames, mySubscriptions} = useServiceTopic();
+  const {allowedServices, setAllowedServices, chosenServiceNames, setChosenServiceNames, mySubscriptions, setMySubscriptions} = useServiceTopic();
+  const [ serviceNames, setServiceNames ] = useState<string[]>(chosenServiceNames.sort());
   const serviceTopics = allowedServices.map((service) => service.name);
 
   const readMrnFromCert = (cert: Certificate): string => {
@@ -30,26 +32,52 @@ const Configuration = ({ connect }: ConfigurationProp) => {
     return ownMrn;
   }
 
-  const handleSave = () => {
+  const handleSave = async () => {
     // iterate allowedServices
-    allowedServices.forEach((service) => {
+    await allowedServices.forEach((service) => {
       const serviceName = service.name;
       // iterate possibleSubscriptions
       mySubscriptions.forEach((sub) => {
         if (sub.serviceSubscription!.service!.name === serviceName) {
           // update subscription if activity changes
-          if (chosenServiceNames.includes(serviceName) && !sub.isActive) {
-            activateServiceSubscription(keycloak!, token, sub.id!);
-          } else if (!chosenServiceNames.includes(serviceName) && sub.isActive) {
-            deactivateServiceSubscription(keycloak!, token, sub.id!);
-          } else {
-            alert("You need to create user service subscription for the service first");
+          if (serviceNames.includes(serviceName) && !sub.isActive) {
+            console.log("activating", sub.id);
+            activateServiceSubscription(keycloak!, token, sub.id!).then((res) => {
+              console.log(res);
+              updateSubscriptions();
+            });
+          }
+          if (!serviceNames.includes(serviceName) && sub.isActive) {
+            console.log("deactivating", sub.id);
+            deactivateServiceSubscription(keycloak!, token, sub.id!).then((res) => {
+              console.log(res);
+              updateSubscriptions();
+            });
           }
         }
       });
     });
-    console.log(chosenServiceNames);
-  };
+    setChosenServiceNames(serviceNames);
+  }
+
+  const updateSubscriptions = async () => {
+    fetchPossibleSubscriptions(keycloak!, token).then((response) => {
+      const data = response.data;
+      const services = (data as any).map((sub: any) => 
+        sub.serviceSubscription.service.name === 'S-124' ? { name: sub.serviceSubscription.service.name, value: ServiceTopic.S124, link: '/s124' } :
+        sub.serviceSubscription.service.name === 'Automatic Route Planning' ? { name: sub.serviceSubscription.service.name, value: ServiceTopic.ARP, link: '/routeplan' } :
+        sub.serviceSubscription.service.name === 'Chat' ? { name: sub.serviceSubscription.service.name, value: ServiceTopic.CHAT, link: '/chat' } : null
+      );
+      setAllowedServices(services);
+      setMySubscriptions(data as unknown as UserServiceSubscription[]);
+    });
+    fetchActiveSubscriptions(keycloak!, token).then((response) => {
+      const data = response.data;
+      const services = (data as any).map((sub: any) => sub.serviceSubscription.service.name);
+      setChosenServiceNames(services);
+    });
+  }
+  
 
   const handleDisconnect = () => {
     disconnect();
@@ -63,9 +91,9 @@ const Configuration = ({ connect }: ConfigurationProp) => {
         <Heading level={3}>Select Service</Heading>
         <Box pad="medium">
         <CheckBoxGroup
-        value={chosenServiceNames}
+        value={serviceNames}
         onChange={(event: any) => {
-          setChosenServiceNames(event.value);
+            setServiceNames(event.value.sort());
         }}
         options={serviceTopics}
       />

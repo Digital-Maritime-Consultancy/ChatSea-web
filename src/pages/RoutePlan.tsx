@@ -10,6 +10,7 @@ import { Configuration, MyUserControllerApi, Service, UserServiceUsageDto } from
 import { BASE_PATH } from "../backend-api/saas-management/base";
 import useKeycloak from "../hooks/useKeycloak";
 import { getAllActiveServices, getOrgServiceUsageCost, getServiceCostLimit, reportUsage } from "../util/saasAPICaller";
+import { useServiceTopic } from "../context/ServiceTopicContext";
 
 export interface MapProp {
 }
@@ -51,6 +52,7 @@ export const RoutePlan = forwardRef(({  }: MapProp, ref) => {
     const [data, setData] = useState<S100Data[]>([]);
     const [serviceId, setServiceId] = useState(0);
     const [serviceUnitPrice, setServiceUnitPrice] = useState(0);
+    const { chosenServiceNames } = useServiceTopic();
 
     // ARP 관련
     const [isRoutingEnabled, setIsRoutingEnabled] = useState<boolean>(false);
@@ -66,17 +68,17 @@ export const RoutePlan = forwardRef(({  }: MapProp, ref) => {
     const [routePolyline, setRoutePolyline] = useState<LatLngTuple[]>([]);
 
     useEffect(() => {
-        if (!authenticated) return;
+        if (!authenticated || chosenServiceNames.length === 0) return;
         getAllActiveServices(keycloak!, token).then((services) => {
-            const service = services.find((service: Service) => service.name === 'Automatic Route Planning');
-            if (service === undefined) {
-                alert('Service is not active for you');
-            } else {
+            const service = services.data.content.find((service: Service) => service.name === 'Automatic Route Planning');
+            if (service && chosenServiceNames.includes(service.name)) {
                 setServiceId(service.id);
                 setServiceUnitPrice(service.unitPrice);
+            } else {
+                alert('Service is not active for you');
             }
         });
-    }, [authenticated]);
+    }, [authenticated, chosenServiceNames]);
     
     const canUseService = async (incomingUsageAmount: number = 0) => 
     {
