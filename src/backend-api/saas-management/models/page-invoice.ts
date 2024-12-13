@@ -27,13 +27,13 @@ export interface PageInvoice {
      * @type {number}
      * @memberof PageInvoice
      */
-    totalElements?: number;
+    totalPages?: number;
 
     /**
      * @type {number}
      * @memberof PageInvoice
      */
-    totalPages?: number;
+    totalElements?: number;
 
     /**
      * @type {PageableObject}

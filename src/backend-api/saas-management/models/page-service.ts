@@ -27,13 +27,13 @@ export interface PageService {
      * @type {number}
      * @memberof PageService
      */
-    totalElements?: number;
+    totalPages?: number;
 
     /**
      * @type {number}
      * @memberof PageService
      */
-    totalPages?: number;
+    totalElements?: number;
 
     /**
      * @type {PageableObject}

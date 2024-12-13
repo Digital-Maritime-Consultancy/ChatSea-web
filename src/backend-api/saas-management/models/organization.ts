@@ -91,4 +91,10 @@ export interface Organization {
      * @memberof Organization
      */
     currentBalance?: number;
+
+    /**
+     * @type {number}
+     * @memberof Organization
+     */
+    usageCostLimit?: number;
 }

@@ -13,6 +13,7 @@ export * from './page-organization-candidate';
 export * from './page-organization-subscription';
 export * from './page-payment';
 export * from './page-service';
+export * from './page-service-subscription';
 export * from './page-service-usage-metric';
 export * from './page-subscription-plan';
 export * from './page-user';

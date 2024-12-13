@@ -27,13 +27,13 @@ export interface PageOrganizationSubscription {
      * @type {number}
      * @memberof PageOrganizationSubscription
      */
-    totalElements?: number;
+    totalPages?: number;
 
     /**
      * @type {number}
      * @memberof PageOrganizationSubscription
      */
-    totalPages?: number;
+    totalElements?: number;
 
     /**
      * @type {PageableObject}

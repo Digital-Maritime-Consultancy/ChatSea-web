@@ -69,6 +69,44 @@ export const MyUserControllerApiAxiosParamCreator = function (configuration?: Co
         },
         /**
          * 
+         * @param {number} [predictedCost] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        canUseService: async (predictedCost?: number, options: AxiosRequestConfig = {}): Promise<RequestArgs> => {
+            const localVarPath = `/api/my-user/can-use-service`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, 'https://example.com');
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+            const localVarRequestOptions :AxiosRequestConfig = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            if (predictedCost !== undefined) {
+                localVarQueryParameter['predictedCost'] = predictedCost;
+            }
+
+            const query = new URLSearchParams(localVarUrlObj.search);
+            for (const key in localVarQueryParameter) {
+                query.set(key, localVarQueryParameter[key]);
+            }
+            for (const key in options.params) {
+                query.set(key, options.params[key]);
+            }
+            localVarUrlObj.search = (new URLSearchParams(query)).toString();
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: localVarUrlObj.pathname + localVarUrlObj.search + localVarUrlObj.hash,
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
          * @param {number} id 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -398,6 +436,19 @@ export const MyUserControllerApiFp = function(configuration?: Configuration) {
         },
         /**
          * 
+         * @param {number} [predictedCost] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async canUseService(predictedCost?: number, options?: AxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => Promise<AxiosResponse<string>>> {
+            const localVarAxiosArgs = await MyUserControllerApiAxiosParamCreator(configuration).canUseService(predictedCost, options);
+            return (axios: AxiosInstance = globalAxios, basePath: string = BASE_PATH) => {
+                const axiosRequestArgs :AxiosRequestConfig = {...localVarAxiosArgs.options, url: basePath + localVarAxiosArgs.url};
+                return axios.request(axiosRequestArgs);
+            };
+        },
+        /**
+         * 
          * @param {number} id 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -518,6 +569,15 @@ export const MyUserControllerApiFactory = function (configuration?: Configuratio
         },
         /**
          * 
+         * @param {number} [predictedCost] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async canUseService(predictedCost?: number, options?: AxiosRequestConfig): Promise<AxiosResponse<string>> {
+            return MyUserControllerApiFp(configuration).canUseService(predictedCost, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
          * @param {number} id 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -605,6 +665,16 @@ export class MyUserControllerApi extends BaseAPI {
      */
     public async activateSubscription(id: number, options?: AxiosRequestConfig) : Promise<AxiosResponse<void>> {
         return MyUserControllerApiFp(this.configuration).activateSubscription(id, options).then((request) => request(this.axios, this.basePath));
+    }
+    /**
+     * 
+     * @param {number} [predictedCost] 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof MyUserControllerApi
+     */
+    public async canUseService(predictedCost?: number, options?: AxiosRequestConfig) : Promise<AxiosResponse<string>> {
+        return MyUserControllerApiFp(this.configuration).canUseService(predictedCost, options).then((request) => request(this.axios, this.basePath));
     }
     /**
      * 

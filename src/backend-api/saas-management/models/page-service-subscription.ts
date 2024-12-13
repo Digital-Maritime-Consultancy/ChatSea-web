@@ -13,79 +13,79 @@
  */
 
 import { PageableObject } from './pageable-object';
-import { ServiceUsageMetric } from './service-usage-metric';
+import { ServiceSubscription } from './service-subscription';
 import { SortObject } from './sort-object';
  /**
  * 
  *
  * @export
- * @interface PageServiceUsageMetric
+ * @interface PageServiceSubscription
  */
-export interface PageServiceUsageMetric {
+export interface PageServiceSubscription {
 
     /**
      * @type {number}
-     * @memberof PageServiceUsageMetric
+     * @memberof PageServiceSubscription
      */
     totalPages?: number;
 
     /**
      * @type {number}
-     * @memberof PageServiceUsageMetric
+     * @memberof PageServiceSubscription
      */
     totalElements?: number;
 
     /**
      * @type {PageableObject}
-     * @memberof PageServiceUsageMetric
+     * @memberof PageServiceSubscription
      */
     pageable?: PageableObject;
 
     /**
      * @type {boolean}
-     * @memberof PageServiceUsageMetric
+     * @memberof PageServiceSubscription
      */
     first?: boolean;
 
     /**
      * @type {boolean}
-     * @memberof PageServiceUsageMetric
+     * @memberof PageServiceSubscription
      */
     last?: boolean;
 
     /**
      * @type {number}
-     * @memberof PageServiceUsageMetric
+     * @memberof PageServiceSubscription
      */
     size?: number;
 
     /**
-     * @type {Array<ServiceUsageMetric>}
-     * @memberof PageServiceUsageMetric
+     * @type {Array<ServiceSubscription>}
+     * @memberof PageServiceSubscription
      */
-    content?: Array<ServiceUsageMetric>;
+    content?: Array<ServiceSubscription>;
 
     /**
      * @type {number}
-     * @memberof PageServiceUsageMetric
+     * @memberof PageServiceSubscription
      */
     number?: number;
 
     /**
      * @type {Array<SortObject>}
-     * @memberof PageServiceUsageMetric
+     * @memberof PageServiceSubscription
      */
     sort?: Array<SortObject>;
 
     /**
      * @type {number}
-     * @memberof PageServiceUsageMetric
+     * @memberof PageServiceSubscription
      */
     numberOfElements?: number;
 
     /**
      * @type {boolean}
-     * @memberof PageServiceUsageMetric
+     * @memberof PageServiceSubscription
      */
     empty?: boolean;
 }

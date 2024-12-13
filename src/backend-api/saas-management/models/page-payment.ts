@@ -27,13 +27,13 @@ export interface PagePayment {
      * @type {number}
      * @memberof PagePayment
      */
-    totalElements?: number;
+    totalPages?: number;
 
     /**
      * @type {number}
      * @memberof PagePayment
      */
-    totalPages?: number;
+    totalElements?: number;
 
     /**
      * @type {PageableObject}

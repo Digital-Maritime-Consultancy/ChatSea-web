@@ -13,9 +13,6 @@
  */
 
 import { Organization } from './organization';
-import { OrganizationServiceUsage } from './organization-service-usage';
-import { ServiceSubscription } from './service-subscription';
-import { ServiceUsageMetric } from './service-usage-metric';
  /**
  * Model object representing a service
  *
@@ -95,22 +92,4 @@ export interface Service {
      * @memberof Service
      */
     isActive?: boolean;
-
-    /**
-     * @type {Array<OrganizationServiceUsage>}
-     * @memberof Service
-     */
-    organizationServiceUsages?: Array<OrganizationServiceUsage>;
-
-    /**
-     * @type {Array<ServiceSubscription>}
-     * @memberof Service
-     */
-    serviceSubscriptions?: Array<ServiceSubscription>;
-
-    /**
-     * @type {Array<ServiceUsageMetric>}
-     * @memberof Service
-     */
-    serviceUsageMetrics?: Array<ServiceUsageMetric>;
 }

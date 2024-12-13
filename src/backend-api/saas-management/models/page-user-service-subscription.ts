@@ -27,13 +27,13 @@ export interface PageUserServiceSubscription {
      * @type {number}
      * @memberof PageUserServiceSubscription
      */
-    totalElements?: number;
+    totalPages?: number;
 
     /**
      * @type {number}
      * @memberof PageUserServiceSubscription
      */
-    totalPages?: number;
+    totalElements?: number;
 
     /**
      * @type {PageableObject}
