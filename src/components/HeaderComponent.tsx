@@ -5,33 +5,35 @@ import useKeycloak from "../hooks/useKeycloak";
 import { useMmsContext } from '../context/MmsContext';
 import { useServiceTopic } from "../context/ServiceTopicContext";
 import MMSStatus, { MMSConnStatus } from "./MMSStatus";
-import { Configuration, UserManagementControllerApi } from "../backend-api/saas-management";
+import { Configuration, UserManagementControllerApi, UserServiceSubscription } from "../backend-api/saas-management";
 import { BASE_PATH } from "../backend-api/saas-management/base";
-import { fetchPossibleSubscriptions, fetchUserServiceSubscriptions } from "../util/saasAPICaller";
+import { fetchActiveSubscriptions, fetchPossibleSubscriptions, fetchUserServiceSubscriptions } from "../util/saasAPICaller";
+import { ServiceTopic } from "../models/serviceTopic";
 
 function HeaderComponent() {
   const [background, setBackground] = useState("brand");
   const { keycloak, authenticated, orgMrn, mrn, token } = useKeycloak();
   const navigate = useNavigate();
   const redirectUri = window.location.origin;
-  const {allowedServices, setAllowedServices, chosenService, setChosenService} = useServiceTopic();
+  const {allowedServices, setAllowedServices, chosenServiceNames: chosenService, setChosenServiceNames: setChosenService, setMySubscriptions: setPossibleSubscriptions} = useServiceTopic();
   const { connected, mrn: mrnFromMMS, disconnect } = useMmsContext();
   const [mmsConnStatus, setMmsConnStatus] = useState<MMSConnStatus>(MMSConnStatus.NotConnected);
   useEffect(() => {
     if (authenticated) {
-      fetchPossibleSubscriptions(keycloak!, token).then((data) => {
-        console.log(data);
-        const services = (data as any).map((sub: any) => {
-          console.log(sub);
-          const serviceId = sub.serviceSubscription.service.name === 'S-124' ? 's124' :
-            sub.serviceSubscription.service.name === 'Automatic Route Planning' ? 'arp' : 'chat';
-          return {
-            name: sub.serviceSubscription.service.name,
-            value: sub.serviceSubscription.service.id,
-            link: `/service/${serviceId}`
-          }
-        });
+      fetchPossibleSubscriptions(keycloak!, token).then((response) => {
+        const data = response.data;
+        const services = (data as any).map((sub: any) => 
+          sub.serviceSubscription.service.name === 'S-124' ? { name: sub.serviceSubscription.service.name, value: ServiceTopic.S124, link: '/s124' } :
+          sub.serviceSubscription.service.name === 'Automatic Route Planning' ? { name: sub.serviceSubscription.service.name, value: ServiceTopic.ARP, link: '/routeplan' } :
+          sub.serviceSubscription.service.name === 'Chat' ? { name: sub.serviceSubscription.service.name, value: ServiceTopic.CHAT, link: '/chat' } : null
+        );
         setAllowedServices(services);
+        setPossibleSubscriptions(data as unknown as UserServiceSubscription[]);
+      });
+      fetchActiveSubscriptions(keycloak!, token).then((response) => {
+        const data = response.data;
+        const services = (data as any).map((sub: any) => sub.serviceSubscription.service.name);
+        setChosenService(services);
       });
     }
     if (connected) {

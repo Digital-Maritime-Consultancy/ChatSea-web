@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, ReactNode } from 'react';
+import { UserServiceSubscription } from '../backend-api/saas-management';
 
 // Define the ServiceInfo and ServiceTopic types
 interface ServiceInfo {
@@ -17,8 +18,10 @@ enum ServiceTopic {
 interface ServiceTopicContextType {
     allowedServices: ServiceInfo[];
     setAllowedServices: React.Dispatch<React.SetStateAction<ServiceInfo[]>>;
-    chosenService: string[];
-    setChosenService: React.Dispatch<React.SetStateAction<string[]>>;
+    chosenServiceNames: string[];
+    setChosenServiceNames: React.Dispatch<React.SetStateAction<string[]>>;
+    mySubscriptions: UserServiceSubscription[];
+    setMySubscriptions: React.Dispatch<React.SetStateAction<UserServiceSubscription[]>>;
 }
 
 // Create the context
@@ -26,16 +29,11 @@ const ServiceTopicContext = createContext<ServiceTopicContextType | undefined>(u
 
 // Create the provider component
 const ServiceTopicProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-    const [allowedServices, setAllowedServices] = useState<ServiceInfo[]>([
-        { name: 'Navigational Warning', value: ServiceTopic.S124, link: '/s124' },
-        { name: 'Route Planning', value: ServiceTopic.ARP, link: '/routeplan' },
-        { name: 'Chat', value: ServiceTopic.CHAT, link: '/chat' },
-    ]);
-
+    const [allowedServices, setAllowedServices] = useState<ServiceInfo[]>([]);
     const [chosenService, setChosenService] = useState<string[]>(allowedServices.map((service) => service.name));
-
+    const [mySubscriptions, setMySubscriptions] = useState<UserServiceSubscription[]>([]);
     return (
-        <ServiceTopicContext.Provider value={{ allowedServices, setAllowedServices, chosenService, setChosenService }}>
+        <ServiceTopicContext.Provider value={{ allowedServices, setAllowedServices, chosenServiceNames: chosenService, setChosenServiceNames: setChosenService, mySubscriptions: mySubscriptions, setMySubscriptions: setMySubscriptions }}>
             {children}
         </ServiceTopicContext.Provider>
     );
