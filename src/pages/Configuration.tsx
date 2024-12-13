@@ -18,7 +18,7 @@ const Configuration = ({ connect }: ConfigurationProp) => {
   const navigate = useNavigate();
   const { keycloak, token } = useKeycloak();
   const {allowedServices, setAllowedServices, chosenServiceNames, setChosenServiceNames, mySubscriptions, setMySubscriptions} = useServiceTopic();
-  const [ serviceNames, setServiceNames ] = useState<string[]>(chosenServiceNames.sort());
+  const [ serviceNames, setServiceNames ] = useState<string[]>(chosenServiceNames);
   const serviceTopics = allowedServices.map((service) => service.name);
 
   const readMrnFromCert = (cert: Certificate): string => {
@@ -41,14 +41,12 @@ const Configuration = ({ connect }: ConfigurationProp) => {
         if (sub.serviceSubscription!.service!.name === serviceName) {
           // update subscription if activity changes
           if (serviceNames.includes(serviceName) && !sub.isActive) {
-            console.log("activating", sub.id);
             activateServiceSubscription(keycloak!, token, sub.id!).then((res) => {
               console.log(res);
               updateSubscriptions();
             });
           }
           if (!serviceNames.includes(serviceName) && sub.isActive) {
-            console.log("deactivating", sub.id);
             deactivateServiceSubscription(keycloak!, token, sub.id!).then((res) => {
               console.log(res);
               updateSubscriptions();
@@ -93,9 +91,9 @@ const Configuration = ({ connect }: ConfigurationProp) => {
         <CheckBoxGroup
         value={serviceNames}
         onChange={(event: any) => {
-            setServiceNames(event.value.sort());
+          setServiceNames(event.value);
         }}
-        options={serviceTopics}
+        options={serviceTopics.sort()}
       />
         </Box>
       <Box pad={{ top: "medium" }}>
