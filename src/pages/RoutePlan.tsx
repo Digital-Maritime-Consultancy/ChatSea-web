@@ -84,7 +84,8 @@ export const RoutePlan = forwardRef(({  }: MapProp, ref) => {
     {
         const limit = await getServiceCostLimit(keycloak!, token, orgMrn);
         const usage = await getOrgServiceUsageCost(keycloak!, token, orgMrn);
-        const services = await getAllActiveServices(keycloak!, token);
+        const response = await getAllActiveServices(keycloak!, token);
+        const services = response.data.content;
         const service = services.find((service: Service) => service.name === 'Automatic Route Planning');
         if (service === undefined) {
             alert('Service is not active for you');
