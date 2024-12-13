@@ -7,7 +7,7 @@ import { useServiceTopic } from "../context/ServiceTopicContext";
 import MMSStatus, { MMSConnStatus } from "./MMSStatus";
 import { Configuration, UserManagementControllerApi } from "../backend-api/saas-management";
 import { BASE_PATH } from "../backend-api/saas-management/base";
-import { fetchUserServiceSubscriptions } from "../util/saasAPICaller";
+import { fetchPossibleSubscriptions, fetchUserServiceSubscriptions } from "../util/saasAPICaller";
 
 function HeaderComponent() {
   const [background, setBackground] = useState("brand");
@@ -19,15 +19,19 @@ function HeaderComponent() {
   const [mmsConnStatus, setMmsConnStatus] = useState<MMSConnStatus>(MMSConnStatus.NotConnected);
   useEffect(() => {
     if (authenticated) {
-      fetchUserServiceSubscriptions(keycloak!, token, orgMrn, mrn).then((data) => {
-        // const services = data.map((service: any) => {
-        //   return {
-        //     name: service.serviceName,
-        //     value: service.serviceId,
-        //     link: `/service/${service.serviceId}`
-        //   }
-        // });
-        // setAllowedServices(services);
+      fetchPossibleSubscriptions(keycloak!, token).then((data) => {
+        console.log(data);
+        const services = (data as any).map((sub: any) => {
+          console.log(sub);
+          const serviceId = sub.serviceSubscription.service.name === 'S-124' ? 's124' :
+            sub.serviceSubscription.service.name === 'Automatic Route Planning' ? 'arp' : 'chat';
+          return {
+            name: sub.serviceSubscription.service.name,
+            value: sub.serviceSubscription.service.id,
+            link: `/service/${serviceId}`
+          }
+        });
+        setAllowedServices(services);
       });
     }
     if (connected) {
@@ -74,6 +78,7 @@ function HeaderComponent() {
                 (service) => <Button key={service.value} hoverIndicator onClick={() => navigate(service.link)}>{service.name}</Button>
               )}
               <Button hoverIndicator onClick={() => navigate("/connect")} >Connect</Button>
+              <Button hoverIndicator onClick={() => navigate("/conf")}>Configuration</Button>
             </>
           )}
           <Menu label="Account" items={[{ label: 'Disconnect from MMS', onClick: () => callDisconnect() }, { label: 'Log out', onClick: () => keycloak?.logout({redirectUri}) }]} />

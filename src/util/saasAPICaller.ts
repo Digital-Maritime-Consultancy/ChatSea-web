@@ -32,6 +32,35 @@ const refreshTokenAndRetry = async <T>(
     }
   };
   
+  export const fetchPossibleSubscriptions = async (keycloak: Keycloak, token: string) => {
+    const apiConfig: Configuration = {
+      basePath: BASE_PATH,
+      baseOptions: {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      },
+    };
+    const controller = new MyUserControllerApi(apiConfig);
+
+    const apiCall = (config: Configuration) => controller.getMyPossibleSubscriptions();
+
+    try {  
+      // Make the initial API request
+      const response = await apiCall(apiConfig);
+      return response.data;
+    } catch (error: any) {
+      if (error.response?.status === 401) {
+        // Handle 401 error by refreshing the token and retrying
+        console.warn('401 error detected, attempting token refresh...');
+        return refreshTokenAndRetry(keycloak, token, apiCall);
+      } else {
+        console.error('Failed to fetch user service subscriptions:', error);
+        throw error; // Rethrow the error to handle elsewhere
+      }
+    }
+  }
+
   export const fetchUserServiceSubscriptions = async (keycloak: Keycloak, token: string, orgMrn:string, mrn:string) => {
     const apiConfig: Configuration = {
       basePath: BASE_PATH,
