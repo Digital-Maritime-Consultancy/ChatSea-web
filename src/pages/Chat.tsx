@@ -7,7 +7,7 @@ import { MyUserControllerApi } from "../backend-api/saas-management/apis/my-user
 import { Configuration, Service, UserServiceUsageDto } from "../backend-api/saas-management";
 import { BASE_PATH } from "../backend-api/saas-management/base";
 import useKeycloak from "../hooks/useKeycloak";
-import { getAllActiveServices, getOrgServiceUsageCost, getServiceCostLimit, reportUsage } from "../util/saasAPICaller";
+import { canIUseService, getAllActiveServices, reportUsage } from "../util/saasAPICaller";
 
 const Chat = () => {
   const { keycloak, token, orgMrn } = useKeycloak();
@@ -62,26 +62,15 @@ const Chat = () => {
   }, [msgState]);
 
   const canUseService = async (incomingUsageAmount: number = 0) => 
-  {
-      const limit = await getServiceCostLimit(keycloak!, token, orgMrn);
-      const usage = await getOrgServiceUsageCost(keycloak!, token, orgMrn);
-      const response = await getAllActiveServices(keycloak!, token);
-      const services = response.data.content;
-      const service = services.find((service: Service) => service.name === 'Chat');
-      if (service === undefined) {
-        alert('Service is not active for you');
-          return false;
-      } else {
-        setServiceId(service.id);
-        setServiceUnitPrice(service.unitPrice);
-        if (usage + incomingUsageAmount * service.unitPrice < limit){
+    {
+        const response = await canIUseService(keycloak!, token, incomingUsageAmount);
+        if (response.data === 'Good to go!') {
             return true;
         } else {
-            alert('Service limit reached! Current usage: ' + (usage + incomingUsageAmount * service.unitPrice) + ' / Limit: ' + limit);
+            alert('Service limit reached! Please contact your organization administrator.');
             return false;
         }
-      }
-  }
+    }
 
   const addChatMessage = (message: string) => {
     setReceivedMessages((prevMessages) => [message, ...prevMessages]);

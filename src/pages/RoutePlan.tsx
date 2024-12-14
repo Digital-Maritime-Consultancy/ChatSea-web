@@ -6,10 +6,10 @@ import { parseS124, getMeanPosition } from "../util/s124Parser";
 import { requestARP } from "../util/arp";
 import S100Data from "../models/S100data";
 import FullScreenSpinner from "../components/FullScreenSpinner";
-import { Configuration, MyUserControllerApi, Service, UserServiceUsageDto } from "../backend-api/saas-management";
+import { Service } from "../backend-api/saas-management";
 import { BASE_PATH } from "../backend-api/saas-management/base";
 import useKeycloak from "../hooks/useKeycloak";
-import { getAllActiveServices, getOrgServiceUsageCost, getServiceCostLimit, reportUsage } from "../util/saasAPICaller";
+import { canIUseService, getAllActiveServices, reportUsage } from "../util/saasAPICaller";
 import { useServiceTopic } from "../context/ServiceTopicContext";
 
 export interface MapProp {
@@ -82,23 +82,12 @@ export const RoutePlan = forwardRef(({  }: MapProp, ref) => {
     
     const canUseService = async (incomingUsageAmount: number = 0) => 
     {
-        const limit = await getServiceCostLimit(keycloak!, token, orgMrn);
-        const usage = await getOrgServiceUsageCost(keycloak!, token, orgMrn);
-        const response = await getAllActiveServices(keycloak!, token);
-        const services = response.data.content;
-        const service = services.find((service: Service) => service.name === 'Automatic Route Planning');
-        if (service === undefined) {
-            alert('Service is not active for you');
-            return false;
+        const response = await canIUseService(keycloak!, token, incomingUsageAmount);
+        if (response.data === 'Good to go!') {
+            return true;
         } else {
-            setServiceId(service.id);
-            setServiceUnitPrice(service.unitPrice);
-            if (usage + incomingUsageAmount * service.unitPrice < limit){
-                return true;
-            } else {
-                alert('Service limit reached! Current usage: ' + (usage + incomingUsageAmount * service.unitPrice) + ' / Limit: ' + limit);
-                return false;
-            }
+            alert('Service limit reached! Please contact your organization administrator.');
+            return false;
         }
     }
 
@@ -188,7 +177,13 @@ export const RoutePlan = forwardRef(({  }: MapProp, ref) => {
                             });
                             setIsLoading(false);
                         } catch (error) {
-                            setFooterMessage('[!] Error calculating route : ' + error);
+                            console.log(error);
+                            if ((error as any).status === 403) {
+                                alert('Service Limit exceeded - contact your admin to increase the limit');
+                                setFooterMessage('[!] Service Limit exceeded - contact your admin to increase the limit');
+                            } else {
+                                setFooterMessage('[!] Error calculating route : ' + (error as any).message);
+                            }
                         } finally {
                             setIsRoutingEnabled(false);
                             setTempLocationMarkers({});

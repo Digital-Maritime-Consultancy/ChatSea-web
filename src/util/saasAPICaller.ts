@@ -111,3 +111,8 @@ export const deactivateServiceSubscription = async (keycloak: Keycloak, token: s
   const apiCall = (config: Configuration) => new MyUserControllerApi(config).deactivateSubscription(subscriptionId);
   return makeApiCall(keycloak, token, apiCall);
 }
+
+export const canIUseService = async (keycloak: Keycloak, token: string, predictedCost: number) => {
+  const apiCall = (config: Configuration) => new MyUserControllerApi(config).canUseService(predictedCost);
+  return makeApiCall(keycloak, token, apiCall);
+}
