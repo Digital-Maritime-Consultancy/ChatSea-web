@@ -77,9 +77,17 @@ const Chat = () => {
   }
 
   const handleSendClick = async () => {
-    if (!await canUseService(serviceUnitPrice)) {
+    try {
+      await canUseService(serviceUnitPrice);
+    } catch (error) {
+      if ((error as any).status === 403) {
+        alert('Service Limit exceeded - contact your admin to increase the limit');
+      } else {
+          alert('[!] Error in service usage limit check : ' + (error as any).message);
+      }
       return;
     }
+    
     const encoder = new TextEncoder();
     if (receiverType == "subject") {
       sendSubject(selectedSubject, encoder.encode(message))
