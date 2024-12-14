@@ -77,7 +77,7 @@ const Chat = () => {
   }
 
   const handleSendClick = async () => {
-    if (!await canUseService()) {
+    if (!await canUseService(serviceUnitPrice)) {
       return;
     }
     const encoder = new TextEncoder();

@@ -167,7 +167,7 @@ export const RoutePlan = forwardRef(({  }: MapProp, ref) => {
                         setIsLoading(true);
                         try {
                             const routeData = await requestARP(routeState.startPoint!, clickedPoint, token);
-                            if (!await canUseService(routeData.elapsedTime)) {
+                            if (!await canUseService(routeData.elapsedTime * serviceUnitPrice)) {
                                 return;
                             }
                             setRoutePolyline(routeData.coordinates);
