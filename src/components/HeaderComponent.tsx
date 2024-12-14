@@ -5,9 +5,9 @@ import useKeycloak from "../hooks/useKeycloak";
 import { useMmsContext } from '../context/MmsContext';
 import { useServiceTopic } from "../context/ServiceTopicContext";
 import MMSStatus, { MMSConnStatus } from "./MMSStatus";
-import { Configuration, UserManagementControllerApi, UserServiceSubscription } from "../backend-api/saas-management";
+import { UserServiceSubscription } from "../backend-api/saas-management";
 import { BASE_PATH } from "../backend-api/saas-management/base";
-import { fetchActiveSubscriptions, fetchPossibleSubscriptions, fetchUserServiceSubscriptions } from "../util/saasAPICaller";
+import { fetchActiveSubscriptions, fetchPossibleSubscriptions } from "../util/saasAPICaller";
 import { ServiceTopic } from "../models/serviceTopic";
 
 function HeaderComponent() {

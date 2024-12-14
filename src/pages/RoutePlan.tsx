@@ -6,10 +6,10 @@ import { parseS124, getMeanPosition } from "../util/s124Parser";
 import { requestARP } from "../util/arp";
 import S100Data from "../models/S100data";
 import FullScreenSpinner from "../components/FullScreenSpinner";
-import { Configuration, MyUserControllerApi, Service, UserServiceUsageDto } from "../backend-api/saas-management";
+import { Service } from "../backend-api/saas-management";
 import { BASE_PATH } from "../backend-api/saas-management/base";
 import useKeycloak from "../hooks/useKeycloak";
-import { canIUseService, getAllActiveServices, getOrgServiceUsageCost, getServiceCostLimit, reportUsage } from "../util/saasAPICaller";
+import { canIUseService, getAllActiveServices, reportUsage } from "../util/saasAPICaller";
 import { useServiceTopic } from "../context/ServiceTopicContext";
 
 export interface MapProp {
