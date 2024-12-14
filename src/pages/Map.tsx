@@ -23,7 +23,7 @@ interface RouteState {
 const Flyer = ({ location }: FlyerProps) => {
     const map = useMap();
     useEffect(() => {
-        map.flyTo(location);
+        map.flyTo(location, 17);
     }, [location]);
     return <></>;
 };
