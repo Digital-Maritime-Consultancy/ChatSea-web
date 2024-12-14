@@ -1,4 +1,4 @@
-import { Configuration, MyUserControllerApi, OrganizationManagementControllerApi, OrganizationRequestControllerApi, OrganizationServiceUsage, SuperAdminControllerApi, UserManagementControllerApi } from "../backend-api/saas-management";
+import { Configuration, MyUserControllerApi, OrganizationRequestControllerApi, OrganizationServiceUsage } from "../backend-api/saas-management";
 import { BASE_PATH } from "../backend-api/saas-management/base";
 import Keycloak from 'keycloak-js';
 import { convertToDateString } from "./timeConverter";
@@ -64,36 +64,8 @@ export const fetchActiveSubscriptions = async (keycloak: Keycloak, token: string
   return makeApiCall(keycloak, token, apiCall);
 };
 
-export const fetchUserServiceSubscriptions = async (keycloak: Keycloak, token: string, orgMrn: string, mrn: string) => {
-  const apiCall = (config: Configuration) => new UserManagementControllerApi(config).getUserServiceSubscriptions(orgMrn, mrn);
-  return makeApiCall(keycloak, token, apiCall);
-};
-
-export const getOrgServiceUsageCost = async (keycloak: Keycloak, token: string, orgMrn: string): Promise<number> => {
-  const oneYearAgo = new Date();
-  oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
-  const startDate = convertToDateString(oneYearAgo.getTime());
-  const endDate = convertToDateString(Date.now());
-
-  const apiCall = async (config: Configuration) => {
-    const response = await new OrganizationManagementControllerApi(config).getAllOrganizationServiceUsages(orgMrn, startDate, endDate);
-    return response.data.reduce((acc: number, usage: OrganizationServiceUsage) => acc + usage.usageCost!, 0);
-  };
-
-  return makeApiCall(keycloak, token, apiCall);
-};
-
 export const getAllActiveServices = async (keycloak: Keycloak, token: string): Promise<any> => {
   const apiCall = (config: Configuration) => new OrganizationRequestControllerApi(config).getServices1();
-  return makeApiCall(keycloak, token, apiCall);
-};
-
-export const getServiceCostLimit = async (keycloak: Keycloak, token: string, orgMrn: string): Promise<number> => {
-  const apiCall = async (config: Configuration) => {
-    const response = await new SuperAdminControllerApi(config).getOrganizationSubscriptions();
-    return response.data.content?.filter((sub) => sub.organization.mrn === orgMrn).pop()?.subscriptionPlan.usageLimit || 0;
-  };
-
   return makeApiCall(keycloak, token, apiCall);
 };
 
