@@ -1,13 +1,12 @@
 import { LatLngBoundsLiteral, LatLngExpression, LatLngTuple, Icon } from "leaflet";
-import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react";
+import { forwardRef, useEffect, useImperativeHandle, useState } from "react";
 import { useMap, TileLayer, useMapEvents, MapContainer, Marker, Polygon, Polyline, Popup } from "react-leaflet";
-import { Footer, Text, Box, CheckBox, Spinner } from 'grommet';
-import { parseS124, getMeanPosition } from "../util/s124Parser";
+import { Footer, Text, Box, CheckBox } from 'grommet';
+import { parseS124 } from "../util/s124Parser";
 import { requestARP } from "../util/arp";
 import S100Data from "../models/S100data";
 import FullScreenSpinner from "../components/FullScreenSpinner";
 import { Service } from "../backend-api/saas-management";
-import { BASE_PATH } from "../backend-api/saas-management/base";
 import useKeycloak from "../hooks/useKeycloak";
 import { canIUseService, getAllActiveServices, reportUsage } from "../util/saasAPICaller";
 import { useServiceTopic } from "../context/ServiceTopicContext";
@@ -99,12 +98,7 @@ export const RoutePlan = forwardRef(({  }: MapProp, ref) => {
     const outerBounds: LatLngBoundsLiteral = [
         [50.505, -29.09],
         [52.505, 29.09],
-    ]
-  
-    const multiPolyline: LatLngExpression[][] = [
-        [[51.5, -0.1], [51.5, -0.12], [51.52, -0.12]],
-        [[51.5, -0.05], [51.5, -0.06], [51.52, -0.06]],
-    ]
+    ];
 
     const xmlData = "";
 
